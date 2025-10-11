@@ -280,3 +280,67 @@ Open http://localhost:5300
 - Client app: `client/src/App.tsx`
 
 If anything’s unclear or you want one-command scripts (e.g., setup.ps1), I can add them.
+
+---
+
+## 11) Docker deployment
+
+The included Docker setup lets you build and run the app anywhere Docker is available.
+
+### What’s included
+- `docker-compose.yml`: Orchestrates server (Node + Prisma + SQLite) and client (Nginx).
+- `server/Dockerfile`: Builds the API service, runs Prisma migrate deploy, seeds, and starts the server.
+- `server/docker-entrypoint.sh`: Entrypoint to run migrations/seed before starting.
+- `client/Dockerfile`: Builds the SPA and serves it with Nginx.
+- `client/nginx.conf`: Nginx configuration for SPA routing and static assets.
+
+### Environment variables
+Create a `.env` next to `docker-compose.yml` to customize:
+
+```
+JWT_SECRET=change_me_strong
+DATABASE_URL=file:./dev.db
+CLIENT_URL=http://localhost:8080
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=Admin2025$
+VITE_API_URL=http://localhost:4300/api
+```
+
+Notes:
+- `CLIENT_URL` must match the client container’s exposed URL for CORS.
+- `VITE_API_URL` is baked into the client at build time; compose passes it via build arg.
+- SQLite database and uploads are persisted via volumes.
+
+### Build and run
+
+```
+docker compose build
+docker compose up -d
+```
+
+Open the app at http://localhost:8080
+
+API is at http://localhost:4300/api
+
+### First run and seeding
+- Server runs `prisma migrate deploy` and then `npm run seed` automatically.
+- Admin credentials come from env (`ADMIN_EMAIL`, `ADMIN_PASSWORD`).
+
+### Uploads and static files
+- Profile photos are stored in a shared volume and served at `/assets/profile/...` by the client container.
+
+### Stop and cleanup
+
+```
+docker compose down
+```
+
+To remove volumes (database and uploads):
+
+```
+docker compose down -v
+```
+
+### Troubleshooting
+- If you change `VITE_API_URL`, rebuild the client: `docker compose build client && docker compose up -d client`.
+- Check logs: `docker compose logs -f server` and `docker compose logs -f client`.

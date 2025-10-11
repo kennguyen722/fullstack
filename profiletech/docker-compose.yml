@@ -1,0 +1,45 @@
+services:
+  server:
+    build:
+      context: ./server
+    container_name: profiletech-server
+    environment:
+      - NODE_ENV=production
+      - PORT=4300
+      - JWT_SECRET=${JWT_SECRET:-change_me}
+      - DATABASE_URL=${DATABASE_URL:-file:/app/server/data/dev.db}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:8080}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
+    volumes:
+      # Persist only the SQLite database in a dedicated data dir (avoid overlaying migrations)
+      - server_data:/app/server/data
+      # Shared uploads volume mounted also in client for serving images
+      - uploads:/app/client/public/assets/profile
+    ports:
+      - "4301:4300"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4300/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # server does not depend on client container
+
+  client:
+    build:
+      context: ./client
+      args:
+        # Point client to server API inside/outside container via published port
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:4301/api}
+    container_name: profiletech-client
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:4301/api}
+    volumes:
+      # Serve uploaded profile images from shared volume
+      - uploads:/usr/share/nginx/html/assets/profile
+    ports:
+      - "8080:80"
+
+volumes:
+  server_data:
+  uploads:
