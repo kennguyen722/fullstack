@@ -147,7 +147,7 @@ export default function MyProfile() {
                         <path d="M16 11a3 3 0 1 0 0-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
                     </span>
-                    <span>Leadership</span>
+                    <span>Freelance & Leadership</span>
                   </button>
                 </li>
                 <li className="mt-1">
