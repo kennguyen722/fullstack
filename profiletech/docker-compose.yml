@@ -17,7 +17,7 @@ services:
       # Shared uploads volume mounted also in client for serving images
       - uploads:/app/client/public/assets/profile
     ports:
-      - "4301:4300"
+      - "4300:4300"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:4300/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
@@ -29,16 +29,25 @@ services:
     build:
       context: ./client
       args:
-        # Point client to server API inside/outside container via published port
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:4301/api}
+        # Point client to server API via reverse proxy as same-origin
+        - VITE_API_URL=${VITE_API_URL:-/api}
     container_name: profiletech-client
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:4301/api}
+      - VITE_API_URL=${VITE_API_URL:-/api}
     volumes:
       # Serve uploaded profile images from shared volume
       - uploads:/usr/share/nginx/html/assets/profile
+
+  gateway:
+    image: public.ecr.aws/docker/library/nginx:1.27-alpine
+    container_name: profiletech-gateway
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "8080:80"
+    depends_on:
+      - client
+      - server
 
 volumes:
   server_data:

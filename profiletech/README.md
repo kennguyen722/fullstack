@@ -288,7 +288,7 @@ If anything’s unclear or you want one-command scripts (e.g., setup.ps1), I can
 The included Docker setup lets you build and run the app anywhere Docker is available.
 
 ### What’s included
-- `docker-compose.yml`: Orchestrates server (Node + Prisma + SQLite) and client (Nginx).
+- `docker-compose.yml`: Orchestrates server (Node + Prisma + SQLite), client (Nginx), and a gateway reverse proxy (Nginx).
 - `server/Dockerfile`: Builds the API service, runs Prisma migrate deploy, seeds, and starts the server.
 - `server/docker-entrypoint.sh`: Entrypoint to run migrations/seed before starting.
 - `client/Dockerfile`: Builds the SPA and serves it with Nginx.
@@ -303,12 +303,13 @@ DATABASE_URL=file:./dev.db
 CLIENT_URL=http://localhost:8080
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=Admin2025$
-VITE_API_URL=http://localhost:4300/api
+VITE_API_URL=/api
 ```
 
 Notes:
-- `CLIENT_URL` must match the client container’s exposed URL for CORS.
-- `VITE_API_URL` is baked into the client at build time; compose passes it via build arg.
+- The gateway exposes http://localhost:8080, routes `/` to the client and `/api` to the server.
+- `VITE_API_URL` defaults to `/api` for same-origin calls through the gateway.
+- `CLIENT_URL` for the server can remain `http://localhost:8080`.
 - SQLite database and uploads are persisted via volumes.
 
 ### Build and run
@@ -320,7 +321,8 @@ docker compose up -d
 
 Open the app at http://localhost:8080
 
-API is at http://localhost:4300/api
+API via gateway: http://localhost:8080/api
+Direct API (also exposed): http://localhost:4300/api
 
 ### First run and seeding
 - Server runs `prisma migrate deploy` and then `npm run seed` automatically.
