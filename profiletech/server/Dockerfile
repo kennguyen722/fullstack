@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/node:20-alpine AS base
+FROM public.ecr.aws/docker/library/node:20-bookworm-slim AS base
 WORKDIR /app/server
 
 # Install dependencies
@@ -13,9 +13,14 @@ COPY src ./src
 RUN npm run build
 
 # Runtime image
-FROM public.ecr.aws/docker/library/node:20-alpine AS runtime
+FROM public.ecr.aws/docker/library/node:20-bookworm-slim AS runtime
 WORKDIR /app/server
 ENV NODE_ENV=production
+
+# Ensure OpenSSL v3 is available for Prisma's query engine on Debian
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends libssl3 ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Copy built app and prisma assets
 COPY --from=base /app/server/node_modules ./node_modules

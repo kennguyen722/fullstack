@@ -30,10 +30,16 @@ export default function Profile() {
     skills: []
   });
   const [acct, setAcct] = useState<{ email: string; defaultEmail: string; defaultPassword: string } | null>(null);
+  // Also track login email from localStorage so non-admin users still see it
+  const [loginEmail, setLoginEmail] = useState<string | null>(null);
   const [pw, setPw] = useState<{ currentPassword: string; newPassword: string }>({ currentPassword: '', newPassword: '' });
   const [emailChange, setEmailChange] = useState<{ currentPassword: string; newEmail: string }>({ currentPassword: '', newEmail: '' });
   const [showEmailCur, setShowEmailCur] = useState(false);
   const [showPwCur, setShowPwCur] = useState(false);
+  const [theme, setTheme] = useState<string>(() => {
+    const t = localStorage.getItem('theme') || 'dark';
+    return t === 'dark' || t === 'purple-light' || t === 'executive' ? t : 'dark';
+  });
 
   useEffect(() => {
     (async () => {
@@ -51,7 +57,41 @@ export default function Profile() {
         setLoading(false);
       }
     })();
+    // Initialize login email from localStorage and keep in sync
+    try {
+      const raw = localStorage.getItem('user');
+      const u = raw ? JSON.parse(raw) : null;
+      setLoginEmail(u?.email || null);
+    } catch { setLoginEmail(null); }
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key === 'user') {
+        try { const u = ev.newValue ? JSON.parse(ev.newValue) : null; setLoginEmail(u?.email || null); } catch { setLoginEmail(null); }
+      }
+    };
+    const onAuthChanged = () => {
+      try { const raw = localStorage.getItem('user'); const u = raw ? JSON.parse(raw) : null; setLoginEmail(u?.email || null); } catch { setLoginEmail(null); }
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('auth-changed', onAuthChanged as EventListener);
+    const onThemeChanged = () => {
+      const t = localStorage.getItem('theme') || 'dark';
+      setTheme(t);
+    };
+    window.addEventListener('theme-changed', onThemeChanged as EventListener);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('auth-changed', onAuthChanged as EventListener);
+      window.removeEventListener('theme-changed', onThemeChanged as EventListener);
+    };
   }, []);
+
+  // Apply theme immediately when changed here
+  useEffect(() => {
+    const root = document.documentElement;
+    const t = theme;
+    const normalized = (t === 'dark' || t === 'purple-light' || t === 'executive') ? t : 'dark';
+    root.setAttribute('data-theme', normalized);
+  }, [theme]);
 
   // --- Validation helpers ---
   const isEmailValid = (s: string) => /[^\s@]+@[^\s@]+\.[^\s@]+/.test(s);
@@ -206,7 +246,7 @@ export default function Profile() {
               </div>
             </div>
             <div className="col-12">
-              <label htmlFor="pf-summary" className="form-label">Summary</label>
+              <label htmlFor="pf-summary" className="form-label">Professional Summary</label>
               <textarea id="pf-summary" className="form-control" rows={3} placeholder="Short professional summary" value={data.summary || ''} onChange={e => setData({ ...data, summary: e.target.value })} />
             </div>
           </div>
@@ -214,15 +254,15 @@ export default function Profile() {
 
         <div className="row g-3 mt-3">
           <div className="col-md-6">
-            <label htmlFor="pf-location" className="form-label">Location</label>
+            <label htmlFor="pf-location" className="form-label">Work Location</label>
             <input id="pf-location" className="form-control" placeholder="e.g., Remote · Worldwide" value={data.location || ''} onChange={e => setData({ ...data, location: e.target.value })} />
           </div>
           <div className="col-md-6">
-            <label htmlFor="pf-address" className="form-label">Address</label>
+            <label htmlFor="pf-address" className="form-label">Home Address</label>
             <input id="pf-address" className="form-control" placeholder="Street, City, State/Province" value={data.address || ''} onChange={e => setData({ ...data, address: e.target.value })} />
           </div>
           <div className="col-md-6">
-            <label htmlFor="pf-phone" className="form-label">Phone</label>
+            <label htmlFor="pf-phone" className="form-label">Cell Phone</label>
             <input id="pf-phone" className="form-control" placeholder="e.g., +1 (555) 123-4567" value={data.phone || ''} onChange={e => setData({ ...data, phone: e.target.value })} />
           </div>
           <div className="col-md-6">
@@ -250,7 +290,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <EditableSection title="Experience" collectionKey="experiences" errors={errors} onClearError={clearError} items={data.experiences} setItems={(items) => setData({ ...data, experiences: items })} fields={[
+        <EditableSection title="Professional Experience" collectionKey="experiences" errors={errors} onClearError={clearError} items={data.experiences} setItems={(items) => setData({ ...data, experiences: items })} fields={[
           { key: 'company', label: 'Company' },
           { key: 'role', label: 'Role' },
           { key: 'startDate', label: 'Start Date' },
@@ -267,7 +307,7 @@ export default function Profile() {
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 
-        <EditableSection title="Leadership" collectionKey="leaderships" errors={errors} onClearError={clearError} items={data.leaderships} setItems={(items) => setData({ ...data, leaderships: items })} fields={[
+        <EditableSection title="Freelance & Leadership Experience" collectionKey="leaderships" errors={errors} onClearError={clearError} items={data.leaderships} setItems={(items) => setData({ ...data, leaderships: items })} fields={[
           { key: 'organization', label: 'Organization' },
           { key: 'title', label: 'Title' },
           { key: 'startDate', label: 'Start Date' },
@@ -275,7 +315,7 @@ export default function Profile() {
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 
-        <EditableSection title="Skills" collectionKey="skills" errors={errors} onClearError={clearError} items={data.skills} setItems={(items) => setData({ ...data, skills: items })} fields={[
+        <EditableSection title="Core Technical Skills" collectionKey="skills" errors={errors} onClearError={clearError} items={data.skills} setItems={(items) => setData({ ...data, skills: items })} fields={[
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 
@@ -288,12 +328,34 @@ export default function Profile() {
       <aside className="col-12 col-lg-4">
         <div className="account-sticky">
           <div className="card p-3">
+            {/* Settings section (Theme) */}
+            <div className="mb-3">
+              <h4 className="text-accent mb-2">Settings</h4>
+              <label htmlFor="pf-theme" className="form-label">Theme Selection</label>
+              <select
+                id="pf-theme"
+                className="form-select form-select-sm bg-transparent text-light border-secondary theme-select"
+                value={theme}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setTheme(v);
+                  localStorage.setItem('theme', v);
+                  window.dispatchEvent(new Event('theme-changed'));
+                }}
+              >
+                <option value="dark">Dark (Professional)</option>
+                <option value="purple-light">Light • Purple</option>
+                <option value="executive">Executive • Navy/Gold</option>
+              </select>
+            </div>
             <h4 className="text-accent mb-3">Account</h4>
             <div className="row g-3 align-items-end">
               <div className="col-12">
                 <label htmlFor="pf-acct-email" className="form-label">Login email</label>
-                <input id="pf-acct-email" className="form-control" value={acct?.email || ''} readOnly title="Current login email" />
-                <div className="form-text">Default: {acct?.defaultEmail || '(not set)'} </div>
+                <input id="pf-acct-email" className="form-control" value={acct?.email || loginEmail || ''} readOnly title="Current login email" />
+                {acct ? (
+                  <div className="form-text">Default: {acct?.defaultEmail || '(not set)'} </div>
+                ) : null}
               </div>
               <div className="col-12">
                 <label htmlFor="pf-acct-newemail" className="form-label">New email</label>

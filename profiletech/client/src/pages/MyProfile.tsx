@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../shared/api';
 
 export default function MyProfile() {
+  const params = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [loginEmail, setLoginEmail] = useState<string | null>(null);
@@ -40,11 +42,23 @@ export default function MyProfile() {
     return parts.map(p => p.trim()).filter(Boolean);
   };
 
+  // Determine if a specific profile id was requested
+  const requestedId = useMemo(() => {
+    const idStr = params.id;
+    const id = idStr ? Number(idStr) : undefined;
+    return id && !Number.isNaN(id) ? id : undefined;
+  }, [params.id]);
+
   // fetch helper so we can reuse on events
   async function refetchProfile() {
     try {
-      const token = localStorage.getItem('token');
-      const url = token ? '/profile/me' : '/profile/public';
+      let url = '';
+      if (requestedId) {
+        url = `/profile/${requestedId}`;
+      } else {
+        const token = localStorage.getItem('token');
+        url = token ? '/profile/me' : '/profile/public';
+      }
       const res = await api.get(url);
       setProfile(res.data.profile);
       // bump nonce to force <img> reload if photo changed
@@ -85,7 +99,7 @@ export default function MyProfile() {
         setLoginEmail(u?.email || null);
       } catch { setLoginEmail(null); }
     };
-    window.addEventListener('profile-updated', onProfileUpdated as EventListener);
+  window.addEventListener('profile-updated', onProfileUpdated as EventListener);
     window.addEventListener('storage', onStorage);
     window.addEventListener('auth-changed', onAuthChanged as EventListener);
     return () => {
@@ -93,9 +107,25 @@ export default function MyProfile() {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('auth-changed', onAuthChanged as EventListener);
     };
-  }, []);
+  }, [requestedId]);
 
-  if (loading) return <div className="text-center py-5">Loading dashboard...</div>;
+  // If no :id provided, try to navigate to the correct canonical id to avoid mismatches
+  useEffect(() => {
+    (async () => {
+      if (requestedId) return;
+      try {
+        // Prefer own profile when logged in, otherwise public
+        const token = localStorage.getItem('token');
+        const res = await api.get(token ? '/profile/me' : '/profile/public');
+        const prof = res.data?.profile;
+        if (prof?.id) {
+          navigate(`/myprofile/${prof.id}`, { replace: true });
+        }
+      } catch {}
+    })();
+  }, [requestedId, navigate]);
+
+  if (loading) return <div className="text-center py-5">Loading profile...</div>;
   if (!profile) return <div className="alert alert-warning">No profile data available.</div>;
 
   return (
@@ -125,7 +155,7 @@ export default function MyProfile() {
                         <path d="M5 10.5V20h5v-5h4v5h5v-9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </span>
-                    <span>Full Stack Software Developer</span>
+                    <span>Professional Summary</span>
                   </button>
                 </li>
                 <li className="mt-1">
@@ -301,7 +331,7 @@ export default function MyProfile() {
                 <div className="p-4 rounded-3 shadow-sm panel section-anchor">
                   <div className="row g-3 align-items-start">
                     <div className="col-12 col-lg-8">
-                      <h2 className="mb-2 accent">{profile.headline || 'Profile'}</h2>
+                      <h2 className="mb-2 accent">Professional Summary</h2>
                       <p className="mb-3 text-muted-2">{profile.summary}</p>
                     </div>
                     {profile.photoUrl && (
@@ -436,7 +466,7 @@ export default function MyProfile() {
                           <path d="M2.25 8.25h5.25a4.5 4.5 0 0 1 3.182 1.318l.568.567a1.5 1.5 0 0 0 2.121 0l.568-.567A4.5 4.5 0 0 1 17.121 8.25H21.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </span>
-                      <span>Freelance & Leadership</span>
+                      <span>Freelance & Leadership Experience</span>
                       <span className="badge-accent">Highlights</span>
                     </h4>
                     {profile.leaderships?.length ? (
