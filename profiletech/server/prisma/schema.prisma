@@ -85,3 +85,14 @@ model Skill {
   description String  @default("")
   profile     Profile @relation(fields: [profileId], references: [id])
 }
+
+model ContactSubmission {
+  id         Int      @id @default(autoincrement())
+  toEmail    String
+  fromEmail  String
+  senderName String   @default("")
+  message    String
+  ip         String   @default("")
+  userAgent  String   @default("")
+  createdAt  DateTime @default(now())
+}

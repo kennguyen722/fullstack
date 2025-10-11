@@ -26,6 +26,59 @@ app.use((_req, res, next) => {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+// --- Email Transport Helpers ---
+async function createSmtpTransport(): Promise<any | null> {
+  // If no SMTP host configured, we can't send
+  if (!config.smtpHost) return null;
+  try {
+    const nodemailerMod: any = await import('nodemailer');
+    const nm: any = nodemailerMod?.default ?? nodemailerMod;
+    const useSecure = typeof process.env.SMTP_SECURE !== 'undefined'
+      ? config.smtpSecure
+      : (config.smtpPort === 465); // default to secure on 465 when not explicitly set
+    const transportOpts: any = {
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: useSecure,
+      pool: true,
+      tls: { minVersion: 'TLSv1.2' }
+    };
+    if (config.smtpUser) {
+      transportOpts.auth = { user: config.smtpUser, pass: config.smtpPass };
+    }
+    return nm.createTransport(transportOpts);
+  } catch (e) {
+    console.error('Failed to create SMTP transport:', (e as any)?.message || e);
+    return null;
+  }
+}
+
+async function verifySmtp(): Promise<{ configured: boolean; verified: boolean; error?: string }> {
+  if (!config.smtpHost) return { configured: false, verified: false };
+  const transporter = await createSmtpTransport();
+  if (!transporter) return { configured: true, verified: false, error: 'Transport creation failed' };
+  try {
+    await new Promise<void>((resolve, reject) => {
+      // Nodemailer verify sometimes hangs; add a timeout
+      let done = false;
+      const to = setTimeout(() => {
+        if (!done) { done = true; reject(new Error('SMTP verify timeout')); }
+      }, 7000);
+      transporter.verify((err: any) => {
+        if (done) return;
+        done = true;
+        clearTimeout(to);
+        if (err) reject(err); else resolve();
+      });
+    });
+    return { configured: true, verified: true };
+  } catch (e) {
+    const msg = (e as any)?.message || String(e);
+    console.warn('SMTP verify failed:', msg);
+    return { configured: true, verified: false, error: msg };
+  }
+}
+
 // --- Helpers: Addressing (slug + six-digit publicId) ---
 function slugify(s: string): string {
   return String(s || '')
@@ -100,22 +153,14 @@ async function ensurePasswordResetTable() {
 }
 
 async function sendResetEmail(to: string, resetUrl: string) {
-  const canSend = Boolean(config.smtpHost && config.smtpUser && config.smtpPass);
-  if (!canSend) {
+  const transporter = await createSmtpTransport();
+  if (!transporter) {
     console.log('[RESET LINK]', resetUrl);
     return;
   }
   try {
-    const nodemailerMod: any = await import('nodemailer');
-    const nm: any = nodemailerMod?.default ?? nodemailerMod;
-    const transporter: any = nm.createTransport({
-      host: config.smtpHost,
-      port: config.smtpPort,
-      secure: config.smtpSecure,
-      auth: { user: config.smtpUser, pass: config.smtpPass }
-    } as any);
     await transporter.sendMail({
-      from: config.mailFrom,
+      from: config.mailFrom || config.smtpUser || 'no-reply@localhost',
       to,
       subject: 'Reset your password',
       html: `<p>You requested a password reset. Click the link below to set a new password. This link expires in 1 hour.</p>
@@ -125,6 +170,35 @@ async function sendResetEmail(to: string, resetUrl: string) {
   } catch (e) {
     console.error('Failed to send reset email:', (e as any)?.message || e);
     console.log('[RESET LINK]', resetUrl);
+  }
+}
+
+// --- Helpers: Contact email ---
+async function sendContactEmail(to: string, fromEmail: string, name: string, message: string) {
+  const safeName = (name || '').toString().trim();
+  const safeFrom = (fromEmail || '').toString().trim();
+  const subject = `New contact message from ${safeName || safeFrom || 'Website visitor'}`;
+  const html = `<div>
+    <p><strong>From:</strong> ${safeName ? `${safeName} &lt;${safeFrom}&gt;` : safeFrom || 'Unknown'}</p>
+    <p><strong>Message:</strong></p>
+    <pre style="white-space:pre-wrap; font-family:inherit">${(message || '').toString().trim()}</pre>
+  </div>`;
+  const transporter = await createSmtpTransport();
+  if (!transporter) {
+    console.log('[CONTACT EMAIL - DRY RUN] to=%s subject=%s', to, subject);
+    console.log(html);
+    return;
+  }
+  try {
+    await transporter.sendMail({
+      from: config.mailFrom || config.smtpUser || 'no-reply@localhost',
+      to,
+      subject,
+      html,
+      replyTo: safeFrom || undefined
+    });
+  } catch (e) {
+    console.error('Failed to send contact email:', (e as any)?.message || e);
   }
 }
 
@@ -254,6 +328,66 @@ app.post('/api/auth/reset-password', async (req, res) => {
     console.error('reset-password error:', (e as any)?.message || e);
     return res.status(400).json({ error: 'Invalid or expired token' });
   }
+});
+
+// --- Contact endpoint (public; resolves recipient from auth if present) ---
+app.post('/api/contact', async (req, res) => {
+  try {
+    const body = (req.body || {}) as { name?: string; email?: string; message?: string };
+    const name = String(body.name || '').trim();
+    const fromEmail = String(body.email || '').trim();
+    const message = String(body.message || '').trim();
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!fromEmail || !emailRe.test(fromEmail)) return res.status(400).json({ error: 'Enter a valid email' });
+    if (!message || message.length < 5) return res.status(400).json({ error: 'Message is too short' });
+
+    // Determine recipient: if Authorization is valid, use that user's email; else fallback to adminEmail
+    let toEmail = config.adminEmail;
+    const header = req.headers.authorization;
+    if (header && header.startsWith('Bearer ')) {
+      try {
+        const token = header.replace('Bearer ', '');
+        const payload = jwt.verify(token, config.jwtSecret) as JwtPayload;
+        const sub = (payload as any)?.sub;
+        const userId = typeof sub === 'string' ? Number(sub) : sub;
+        if (userId && !Number.isNaN(userId)) {
+          const user = await prisma.user.findUnique({ where: { id: Number(userId) }, select: { email: true } });
+          if (user?.email) toEmail = user.email;
+        }
+      } catch {}
+    }
+
+    // Persist submission (best-effort; do not block response on failure)
+    try {
+      const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
+      const ipStr = Array.isArray(ip) ? ip[0] : String(ip || '');
+      const ua = String(req.headers['user-agent'] || '');
+      await prisma.contactSubmission.create({
+        data: {
+          toEmail: toEmail || '',
+          fromEmail,
+          senderName: name || '',
+          message,
+          ip: ipStr,
+          userAgent: ua,
+        }
+      });
+    } catch (err) {
+      console.warn('contact submission persist failed:', (err as any)?.message || err);
+    }
+
+    await sendContactEmail(toEmail, fromEmail, name, message);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('contact error:', (e as any)?.message || e);
+    return res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// Email diagnostics endpoint (for quick checks)
+app.get('/api/email/status', async (_req, res) => {
+  const status = await verifySmtp();
+  res.json(status);
 });
 
 // --- Profile endpoints ---
@@ -552,6 +686,15 @@ app.put('/api/account/email', auth, requireAdmin, async (req, res) => {
 (async () => {
   await ensurePasswordResetTable();
   await backfillAddressing();
+  // Verify SMTP once on startup
+  const smtp = await verifySmtp();
+  if (!smtp.configured) {
+    console.log('[SMTP] Not configured – emails will be logged to console.');
+  } else if (!smtp.verified) {
+    console.warn('[SMTP] Configured but verification failed:', smtp.error || 'unknown error');
+  } else {
+    console.log('[SMTP] Verified and ready to send emails.');
+  }
   app.listen(config.port, () => {
     console.log(`[profiletech] server on http://localhost:${config.port}`);
   });

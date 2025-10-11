@@ -6,6 +6,23 @@
 			"type": "shell",
 			"command": "npx prisma migrate dev --name add-address-phone",
 			"group": "build"
+		},
+		{
+			"label": "Prisma migrate (server)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"-s",
+				"prisma",
+				"migrate",
+				"deploy"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
 		}
 	]
 }

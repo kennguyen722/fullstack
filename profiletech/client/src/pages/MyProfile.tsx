@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useToast } from '../shared/ToastContext';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../shared/api';
 
@@ -11,8 +12,17 @@ export default function MyProfile() {
   // used to bust image cache when photo changes
   const [photoNonce, setPhotoNonce] = useState<number>(0);
   const [expOpen, setExpOpen] = useState(true);
+  // Contact modal state
+  const [showContact, setShowContact] = useState(false);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sentOk, setSentOk] = useState<boolean | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const NAV_OFFSET = 84; // account for sticky navbar height
+  const { showToast } = useToast();
 
   const scrollToId = (id: string) => {
     const el = document.getElementById(id);
@@ -108,6 +118,66 @@ export default function MyProfile() {
       window.removeEventListener('auth-changed', onAuthChanged as EventListener);
     };
   }, [requestedId]);
+
+  // Close contact modal on Escape
+  useEffect(() => {
+    if (!showContact) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowContact(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showContact]);
+
+  function openContact() {
+    setSendError(null);
+    setSentOk(null);
+    // prefill email from logged in account if available
+    setContactEmail(loginEmail || '');
+    setShowContact(true);
+  }
+
+  function closeContact() {
+    if (sending) return; // prevent closing while sending
+    setShowContact(false);
+  }
+
+  async function submitContact(e: FormEvent) {
+    e.preventDefault();
+    if (sending) return;
+    setSendError(null);
+    setSentOk(null);
+    const email = contactEmail.trim();
+    const message = contactMessage.trim();
+    const name = contactName.trim();
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRe.test(email)) {
+      setSendError('Please enter a valid email.');
+      return;
+    }
+    if (!message || message.length < 5) {
+      setSendError('Your message is too short.');
+      return;
+    }
+    try {
+      setSending(true);
+      await api.post('/contact', { name, email, message });
+  setSentOk(true);
+  showToast('Your message has been sent.', 'success');
+      // clear
+      setContactName('');
+      setContactMessage('');
+      // close after a short delay
+      setTimeout(() => setShowContact(false), 900);
+    } catch (err: any) {
+  const msg = err?.response?.data?.error || 'Failed to send your message.';
+      setSendError(String(msg));
+      setSentOk(false);
+  showToast(String(msg), 'error');
+    } finally {
+      setSending(false);
+    }
+  }
 
   // If no :id provided, try to navigate to the correct canonical id to avoid mismatches
   useEffect(() => {
@@ -347,11 +417,9 @@ export default function MyProfile() {
                     )}
                   </div>
 
-                  {(profile.email || profile.linkedin || profile.github) && (
+                  {(profile.linkedin || profile.github || true) && (
                     <div className="mt-3 d-flex flex-wrap gap-2">
-                      {profile.email && (
-                        <a className="btn btn-primary btn-sm" href={`mailto:${profile.email}`}>Contact me</a>
-                      )}
+                      <button type="button" className="btn btn-primary btn-sm" onClick={openContact}>Contact me</button>
                       {profile.linkedin && (
                         <a className="btn btn-outline-light btn-sm" target="_blank" rel="noreferrer" href={profile.linkedin}>LinkedIn</a>
                       )}
@@ -536,6 +604,69 @@ export default function MyProfile() {
           </main>
         </div>
       </div>
+      {showContact && (
+        <div
+          className="contact-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="contact-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeContact();
+          }}
+        >
+          <div className="card shadow contact-card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-start mb-2">
+                <h5 id="contact-title" className="mb-0 accent">Contact me</h5>
+                <button type="button" className="btn btn-sm btn-outline-light" onClick={closeContact} disabled={sending} aria-label="Close">✕</button>
+              </div>
+              <form onSubmit={submitContact}>
+                <div className="mb-2">
+                  <label className="form-label small text-soft">Your name (optional)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Jane Doe"
+                    autoFocus
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label small text-soft">Your email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label small text-soft">Message</label>
+                  <textarea
+                    className="form-control"
+                    rows={5}
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    placeholder="Hi, I’m interested in working together..."
+                    required
+                  />
+                </div>
+                {sendError && <div className="alert alert-danger py-2 mb-2">{sendError}</div>}
+                {sentOk && <div className="alert alert-success py-2 mb-2">Thanks! Your message has been sent.</div>}
+                <div className="d-flex justify-content-end gap-2">
+                  <button type="button" className="btn btn-outline-light" onClick={closeContact} disabled={sending}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={sending}>
+                    {sending ? 'Sending…' : 'Send message'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
