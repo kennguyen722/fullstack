@@ -37,8 +37,8 @@ export default function Profile() {
   const [showEmailCur, setShowEmailCur] = useState(false);
   const [showPwCur, setShowPwCur] = useState(false);
   const [theme, setTheme] = useState<string>(() => {
-    const t = localStorage.getItem('theme') || 'dark';
-    return t === 'dark' || t === 'purple-light' || t === 'executive' ? t : 'dark';
+    const t = localStorage.getItem('theme') || 'purple-light';
+    return t === 'dark' || t === 'purple-light' || t === 'executive' ? t : 'purple-light';
   });
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function Profile() {
     window.addEventListener('storage', onStorage);
     window.addEventListener('auth-changed', onAuthChanged as EventListener);
     const onThemeChanged = () => {
-      const t = localStorage.getItem('theme') || 'dark';
+      const t = localStorage.getItem('theme') || 'purple-light';
       setTheme(t);
     };
     window.addEventListener('theme-changed', onThemeChanged as EventListener);
@@ -89,7 +89,7 @@ export default function Profile() {
   useEffect(() => {
     const root = document.documentElement;
     const t = theme;
-    const normalized = (t === 'dark' || t === 'purple-light' || t === 'executive') ? t : 'dark';
+  const normalized = (t === 'dark' || t === 'purple-light' || t === 'executive') ? t : 'purple-light';
     root.setAttribute('data-theme', normalized);
   }, [theme]);
 

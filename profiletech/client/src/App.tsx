@@ -10,8 +10,8 @@ import MyProfile from './pages/MyProfile';
 export default function App() {
   // Theme management
   const [theme, setTheme] = useState<string>(() => {
-    const t = localStorage.getItem('theme') || 'dark';
-    return t === 'dark' || t === 'purple-light' || t === 'executive' ? t : 'dark';
+    const t = localStorage.getItem('theme') || 'purple-light';
+    return t === 'dark' || t === 'purple-light' || t === 'executive' ? t : 'purple-light';
   });
   // Navbar brand data (from profile)
   const [brandName, setBrandName] = useState<string>('');
@@ -30,7 +30,7 @@ export default function App() {
   useEffect(() => {
     const update = () => setAuth(readAuth());
     const onThemeChanged = () => {
-      const t = localStorage.getItem('theme') || 'dark';
+      const t = localStorage.getItem('theme') || 'purple-light';
       setTheme(t);
     };
     window.addEventListener('storage', update);
@@ -82,9 +82,9 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     // apply data-theme on :root; default 'dark'
-    // normalize unsupported values to dark
+    // normalize unsupported values to purple-light
     if (theme !== 'dark' && theme !== 'purple-light' && theme !== 'executive') {
-      setTheme('dark');
+      setTheme('purple-light');
       return;
     }
     if (theme === 'dark') {
@@ -103,13 +103,17 @@ export default function App() {
         <div className="container">
           {(() => {
             const computedBrandName = (brandName || '').trim() || 'Profile';
-            const computedTagline = (brandTagline || '').trim() || 'Professional Profile';
+            const computedTagline = (brandTagline || '').trim();
             return (
               <Link className="navbar-brand brand-title" to="/" aria-label={`${computedBrandName} professional profile`}>
                 <span className="brand-name">{computedBrandName}</span>
-                <span className="brand-sep" aria-hidden>•</span>
-                <span className="brand-tagline d-none d-md-inline">{computedTagline}</span>
-                <span className="brand-tagline-short d-inline d-md-none">{computedTagline}</span>
+                {computedTagline && <span className="brand-sep" aria-hidden>•</span>}
+                {computedTagline && (
+                  <span className="brand-tagline d-none d-md-inline">{computedTagline}</span>
+                )}
+                {computedTagline && (
+                  <span className="brand-tagline-short d-inline d-md-none">{computedTagline}</span>
+                )}
               </Link>
             );
           })()}
