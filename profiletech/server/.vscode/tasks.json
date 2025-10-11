@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "profiletech: prisma migrate dev",
+			"type": "shell",
+			"command": "npx prisma migrate dev --name add-address-phone",
+			"group": "build"
+		}
+	]
+}

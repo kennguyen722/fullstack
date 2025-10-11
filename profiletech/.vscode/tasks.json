@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "profiletech: seed db",
+			"type": "shell",
+			"command": "pnpm -C server run seed",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

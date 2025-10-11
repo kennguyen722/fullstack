@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  profile   Profile?
+}
+
+model Profile {
+  id           Int           @id @default(autoincrement())
+  userId       Int           @unique
+  headline     String
+  summary      String
+  displayName  String        @default("")
+  photoUrl     String        @default("")
+  // Quick facts & contact
+  // Highlights & contact
+  location     String        @default("")
+  address      String        @default("")
+  phone        String        @default("")
+  availability String        @default("")
+  focusAreas   String        @default("")
+  email        String        @default("")
+  linkedin     String        @default("")
+  github       String        @default("")
+  experiences  Experience[]
+  educations   Education[]
+  leaderships  Leadership[]
+  skills       Skill[]
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+model Experience {
+  id          Int      @id @default(autoincrement())
+  profileId   Int
+  company     String
+  role        String
+  startDate   DateTime
+  endDate     DateTime?
+  description String
+  profile     Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Education {
+  id          Int      @id @default(autoincrement())
+  profileId   Int
+  school      String
+  degree      String
+  field       String
+  startDate   DateTime
+  endDate     DateTime?
+  description String
+  profile     Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Leadership {
+  id          Int      @id @default(autoincrement())
+  profileId   Int
+  organization String
+  title       String
+  startDate   DateTime
+  endDate     DateTime?
+  description String
+  profile     Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Skill {
+  id          Int     @id @default(autoincrement())
+  profileId   Int
+  description String  @default("")
+  profile     Profile @relation(fields: [profileId], references: [id])
+}

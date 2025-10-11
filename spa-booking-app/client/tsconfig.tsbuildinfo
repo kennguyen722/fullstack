@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/bookingwidget.tsx","./src/lib/api.ts","./src/pages/appointments.tsx","./src/pages/dashboard.tsx","./src/pages/employees.tsx","./src/pages/home.tsx","./src/pages/login.tsx","./src/pages/services.tsx"],"version":"5.9.2"}

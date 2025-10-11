@@ -1,0 +1,454 @@
+/*
+  Theme variables
+  - dark (default): professional slate/charcoal with blue accents
+  - purple-light: dark base with purple accents (for contrast)
+*/
+
+/* Base variables (fallbacks) */
+:root {
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --bg-base: #0b1220;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #111827 50%, #0b1220 100%);
+  --navbar-gradient: linear-gradient(135deg, #0b1020 0%, #0d1b2a 50%, #0a2240 100%);
+  --accent: #60a5fa;        /* blue-400 */
+  --accent-strong: #2563eb; /* blue-600 */
+  --accent-soft: rgba(96,165,250,0.12); /* soft accent for borders/backgrounds */
+  --accent-glow: rgba(96,165,250,0.35); /* glow intensity */
+  --panel-bg: rgba(255,255,255,0.05);
+  --panel-border: rgba(255,255,255,0.08);
+  --text-soft: #cbd5e1;     /* slate-300 */
+  --text-bright: #f8fafc;   /* slate-50 */
+  --text-muted: #d1d5db;    /* gray-300 */
+  --badge-company-bg: #374151; /* gray-700 */
+}
+
+:root[data-theme="dark"] {
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --bg-base: #0b1220;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #111827 50%, #0b1220 100%);
+  --navbar-gradient: linear-gradient(135deg, #0b1020 0%, #0d1b2a 50%, #0a2240 100%);
+  --accent: #60a5fa;
+  --accent-strong: #2563eb;
+  --accent-soft: rgba(96,165,250,0.12);
+  --accent-glow: rgba(96,165,250,0.35);
+  --panel-bg: rgba(255,255,255,0.05);
+  --panel-border: rgba(255,255,255,0.08);
+  --text-soft: #cbd5e1;
+  --text-bright: #f8fafc;
+  --text-muted: #d1d5db;
+  --badge-company-bg: #374151;
+}
+
+:root[data-theme="purple-light"] {
+  /* Use dark professional base with purple accents for better contrast */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --bg-base: #0b1220;
+  /* Purple-tinted elegant gradient */
+  --bg-gradient: linear-gradient(135deg, #14122b 0%, #1b1535 50%, #0d1122 100%);
+  --navbar-gradient: linear-gradient(135deg, #160f2a 0%, #201a3a 50%, #241a40 100%);
+  --accent: #8b5cf6;        /* violet-500 */
+  --accent-strong: #6d28d9; /* violet-700 */
+  --accent-soft: rgba(139, 92, 246, 0.18);
+  --accent-glow: rgba(139, 92, 246, 0.35);
+  --panel-bg: rgba(0, 0, 0, 0.35);
+  --panel-border: rgba(255, 255, 255, 0.10);
+  --text-soft: #d1d5e4;     /* soft light slate */
+  --text-bright: #ffffff;   /* bright for dark bg */
+  --text-muted: #c7cbd6;    /* muted light */
+  --badge-company-bg: rgba(139, 92, 246, 0.25);
+}
+
+/* Executive theme: Navy base, gold accents */
+:root[data-theme="executive"] {
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  --bg-base: #0a0f1c;
+  --bg-gradient: linear-gradient(135deg, #0a1426 0%, #0c1220 50%, #0a0f1c 100%);
+  --navbar-gradient: linear-gradient(135deg, #0a0e1a 0%, #0c1424 50%, #0a1b33 100%);
+  --accent: #f5c971;        /* elegant gold */
+  --accent-strong: #d6a84d; /* deep gold */
+  --accent-soft: rgba(245, 201, 113, 0.16);
+  --accent-glow: rgba(245, 201, 113, 0.35);
+  --panel-bg: rgba(255,255,255,0.045);
+  --panel-border: rgba(255,255,255,0.10);
+  --text-soft: #d7deea;     /* refined light slate */
+  --text-bright: #ffffff;
+  --text-muted: #c9cfdb;
+  --badge-company-bg: rgba(245, 201, 113, 0.18);
+}
+
+/* Global base styles */
+body {
+  /* Theme-aware layered gradient with subtle accent vignette */
+  background: radial-gradient(1000px 400px at 50% -20%, var(--accent-soft), transparent 60%), var(--bg-gradient);
+  background-attachment: fixed, fixed;
+  background-size: cover, cover;
+  color: var(--text-bright);
+  color-scheme: dark; /* ensure native controls (select, inputs) render for dark UI */
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.navbar-brand, .text-accent { color: var(--accent) !important; }
+.btn-primary { background-color: var(--accent-strong); border-color: var(--accent-strong); }
+.card { background-color: var(--panel-bg); border-color: var(--panel-border); }
+
+/* Headings and typography */
+h1, h2, h3 { font-weight: 800; letter-spacing: -0.01em; }
+h4, h5, h6 { font-weight: 700; }
+p { color: var(--text-muted); }
+.lead { color: var(--text-bright); font-weight: 500; }
+.text-muted { color: var(--text-muted) !important; }
+
+/* Links */
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 2px; }
+a:focus { color: var(--accent-strong); outline: none; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Navbar tweaks */
+.navbar-brand { font-weight: 800; letter-spacing: 0.02em; }
+.navbar .nav-link { color: var(--text-soft) !important; }
+.navbar .nav-link:hover { color: var(--accent) !important; }
+.navbar .nav-link:focus { color: var(--accent-strong) !important; }
+.navbar .nav-link.active { color: var(--accent) !important; }
+
+/* Brand title styling: name + separator + tagline, theme-aware */
+.brand-title { display: inline-flex; align-items: baseline; gap: 10px; color: var(--text-bright) !important; }
+.brand-name { font-weight: 900; letter-spacing: 0.02em; color: var(--accent) !important; transition: color 160ms ease; }
+.brand-sep { color: var(--accent); opacity: 0.6; }
+.brand-tagline { font-weight: 600; color: var(--text-soft); opacity: 0.95; transition: color 160ms ease, opacity 160ms ease; }
+.brand-tagline-short { font-weight: 600; color: var(--text-soft); opacity: 0.95; transition: color 160ms ease, opacity 160ms ease; }
+.brand-title:hover .brand-name { color: var(--accent-strong) !important; }
+.brand-title:focus { outline: 2px solid var(--accent-strong); outline-offset: 2px; border-radius: 6px; }
+
+/* Dashboard themed styles */
+.dashboard-wrap {
+  background: transparent; /* inherit global body gradient */
+  min-height: calc(100vh - 60px);
+}
+
+.panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+}
+
+.accent { color: var(--accent); }
+.text-soft { color: var(--text-soft); }
+.text-bright { color: var(--text-bright); }
+.text-muted-2 { color: var(--text-muted); }
+.border-soft { border-color: rgba(255,255,255,0.1) !important; }
+
+.badge-company {
+  background: var(--badge-company-bg);
+  color: var(--text-bright);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Facts list inside header panel */
+.fact-list li + li {
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.fact-list li { font-size: 0.95rem; }
+
+/* Facts panel inside header card */
+.facts-panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+}
+.side-nav .facts-panel { padding: 0.5rem 0.6rem; }
+.facts-panel:hover {
+  background-color: rgba(255,255,255,0.07);
+  border-color: var(--accent);
+}
+.facts-panel:focus-within {
+  background-color: rgba(255,255,255,0.08);
+  border-color: var(--accent-strong);
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 0;
+}
+.facts-title {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+}
+
+/* Small inline icons used in Quick facts */
+.fact-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  opacity: 0.95;
+  transition: color 160ms ease, opacity 160ms ease, transform 120ms ease;
+}
+.facts-panel a:hover .fact-icon,
+.facts-panel a:focus .fact-icon,
+.facts-panel li:hover .fact-icon,
+.facts-panel li:focus-within .fact-icon {
+  color: var(--accent-strong);
+  opacity: 1;
+}
+
+.badge-accent {
+  display: inline-block;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.section-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* UI utilities */
+.theme-select { width: auto; min-width: 200px; white-space: nowrap; }
+/* Improve theme dropdown colors and interactions */
+.theme-select {
+  background-color: rgba(255,255,255,0.04) !important;
+  color: var(--text-bright) !important;
+  border: 1px solid var(--panel-border) !important;
+}
+.theme-select:hover {
+  background-color: rgba(255,255,255,0.07) !important;
+  border-color: var(--accent) !important;
+}
+.theme-select:focus {
+  background-color: rgba(255,255,255,0.08) !important;
+  border-color: var(--accent-strong) !important;
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 0;
+}
+/* Ensure dropdown list items use dark background/light text */
+.theme-select option {
+  background-color: var(--bg-base);
+  color: var(--text-bright);
+}
+.theme-select option:checked { background-color: var(--accent-strong); color: #fff; }
+
+/* Button hover polish to match theme */
+.btn-primary:hover { background-color: var(--accent); border-color: var(--accent); }
+.btn-outline-light:hover { background-color: rgba(255,255,255,0.12); color: var(--text-bright); }
+
+/* Buttons general */
+.btn { border-radius: 8px; }
+.btn-outline-light { color: var(--text-bright); border-color: var(--panel-border); }
+.btn-outline-light:focus { box-shadow: 0 0 0 0.2rem rgba(96,165,250,0.25); }
+.btn-primary:focus { box-shadow: 0 0 0 0.2rem rgba(37,99,235,0.35); }
+.btn:active { transform: translateY(0.5px); }
+
+/* Professional dark blue gradient header */
+.navbar-professional {
+  background: var(--navbar-gradient) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  position: sticky;
+  top: 0;
+  z-index: 1030; /* above content */
+}
+
+/* Side navigation */
+.side-nav {
+  position: sticky;
+  top: 84px; /* same as NAV_OFFSET in Dashboard */
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+/* Sticky stack wrapper for side panels (nav + contact + facts) */
+.side-stack {
+  position: sticky;
+  top: 84px; /* aligns with navbar height */
+}
+.side-nav:hover {
+  background-color: rgba(255,255,255,0.07);
+  border-color: var(--accent);
+}
+.side-nav:focus-within {
+  background-color: rgba(255,255,255,0.08);
+  border-color: var(--accent-strong);
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 0;
+}
+.side-title { font-size: 0.9rem; color: var(--text-soft); margin-bottom: 0.25rem; }
+.side-title {
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  position: relative;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+.side-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 40px;
+  background: linear-gradient(90deg, var(--accent-strong), transparent);
+  border-radius: 2px;
+}
+.side-title::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+.side-link, .side-sub-link {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-bright);
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.side-link:hover, .side-sub-link:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
+.side-link:focus, .side-sub-link:focus { color: var(--accent-strong); outline: none; }
+.side-sub-link { font-size: 0.9rem; color: var(--text-soft); }
+.chevron { transition: transform 0.15s ease; display: inline-block; }
+.chevron.open { transform: rotate(90deg); }
+
+/* Anchor offset helper so headings aren't hidden behind sticky navbar */
+.section-anchor { scroll-margin-top: 84px; }
+
+/* Stacked items within section cards */
+.section-item + .section-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+/* Cards */
+.card { border-radius: 12px; border: 1px solid var(--panel-border); }
+.card.shadow-sm { box-shadow: 0 6px 18px rgba(0,0,0,0.25) !important; }
+
+/* Card/Panel interaction states aligned with Quick facts */
+.card:hover, .panel:hover, .facts-panel:hover, .side-nav:hover {
+  background-color: rgba(255,255,255,0.07);
+  border-color: var(--accent);
+}
+.card:focus-within, .panel:focus-within, .facts-panel:focus-within, .side-nav:focus-within {
+  background-color: rgba(255,255,255,0.08);
+  border-color: var(--accent-strong);
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 0;
+}
+
+/* Profile photo preview */
+.photo-preview {
+  max-height: 80px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+
+/* Responsive image sizing helper (kept for other uses if needed) */
+.photo-card-img {
+  max-height: none;
+  object-fit: cover;
+}
+
+/* Professional photo card styling */
+/* photo-card wrapper removed in header; keep frame and image styles */
+.photo-frame {
+  position: relative;
+  background: transparent;
+  padding: 10px; /* uniform padding for proportional sides */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-card-img {
+  display: block;
+  max-width: 100%;
+  height: auto; /* keep natural aspect ratio; show full image */
+  margin: 0 auto; /* ensure horizontal centering when narrower */
+  border-radius: 10px;
+  border: none; /* borderless by default for a clean look */
+  padding: 0; /* rely on photo-frame spacing */
+  background: transparent; /* let the theme panel show through */
+  transition: box-shadow 140ms ease, outline-color 140ms ease, background-color 140ms ease;
+}
+.photo-card-img:hover {
+  box-shadow: 0 0 0 3px var(--accent-soft); /* soft theme-accent halo */
+}
+.photo-card-img:focus {
+  outline: 2px solid var(--accent-strong); /* clear keyboard focus ring */
+  outline-offset: 0;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* .photo-actions removed with photo-card */
+
+/* Compact icon button aligned with theme */
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--text-soft);
+  border: 1px solid var(--panel-border);
+  background: rgba(255,255,255,0.04);
+}
+.nav-icon { display: inline-flex; width: 18px; height: 18px; color: var(--accent); margin-right: 10px; opacity: 0.9; }
+.nav-icon.sub { width: 10px; height: 10px; margin-right: 8px; color: var(--accent); opacity: 0.95; }
+
+/* Color transitions on hover/focus for professional feel */
+.side-link:hover .nav-icon, .side-link:focus .nav-icon { color: var(--accent-strong); }
+.side-sub-link:hover .nav-icon.sub, .side-sub-link:focus .nav-icon.sub { color: var(--accent-strong); }
+.side-sub-link { padding-left: 14px; }
+.icon-button:hover {
+  color: var(--text-bright);
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.07);
+}
+.icon-button:focus {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 0;
+}
+
+/* photo-card interactions removed */
+
+/* Forms on dark theme */
+.form-label { color: var(--text-soft); font-weight: 600; }
+.form-control, .form-select {
+  background-color: rgba(255,255,255,0.04);
+  border: 1px solid var(--panel-border);
+  color: var(--text-bright);
+}
+.form-control::placeholder { color: rgba(255,255,255,0.45); }
+.form-control:focus, .form-select:focus {
+  background-color: rgba(255,255,255,0.06);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem rgba(96,165,250,0.2);
+  color: var(--text-bright);
+}
+
+/* Alerts tuned for dark UI */
+.alert { border-radius: 10px; border: 1px solid var(--panel-border); }
+.alert-danger { background-color: rgba(239, 68, 68, 0.15); color: #fecaca; border-color: rgba(239, 68, 68, 0.35); }
+.alert-success { background-color: rgba(34, 197, 94, 0.15); color: #bbf7d0; border-color: rgba(34, 197, 94, 0.35); }
+.alert-warning { background-color: rgba(234, 179, 8, 0.15); color: #fde68a; border-color: rgba(234, 179, 8, 0.35); }

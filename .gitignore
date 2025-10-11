@@ -13,6 +13,15 @@ bin-release/
 *.ipa
 *.apk
 
+# node modules
+node_modules/
+spa-booking-app/client/node_modules/*
+spa-booking-app/server/node_modules/*
+
+# distribution
+spa-booking-app/client/dist/*
+spa-booking-app/server/dist/*
+
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
