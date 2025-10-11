@@ -9,6 +9,7 @@ import { z } from 'zod';
 import path from 'path';
 import { promises as fs } from 'fs';
 import multer from 'multer';
+import crypto from 'crypto';
 
 const { PrismaClient } = pkg as any;
 const prisma = new PrismaClient();
@@ -24,6 +25,56 @@ app.use((_req, res, next) => {
 });
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// Ensure password reset table exists (raw SQL; avoids migration for SQLite)
+async function ensurePasswordResetTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        expiresAt DATETIME NOT NULL,
+        usedAt DATETIME,
+        createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (e) {
+    console.error('Failed to ensure password_resets table:', (e as any)?.message || e);
+  }
+}
+ensurePasswordResetTable();
+
+// Email helper (optional)
+async function sendResetEmail(to: string, resetUrl: string) {
+  const canSend = Boolean(config.smtpHost && config.smtpUser && config.smtpPass);
+  if (!canSend) {
+    console.log('[RESET LINK]', resetUrl);
+    return;
+  }
+  try {
+    // Dynamic import to avoid hard dependency during local builds
+    const nodemailerMod: any = await import('nodemailer');
+    const nm: any = nodemailerMod?.default ?? nodemailerMod;
+    const transporter: any = nm.createTransport({
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: config.smtpSecure,
+      auth: { user: config.smtpUser, pass: config.smtpPass }
+    } as any);
+    await transporter.sendMail({
+      from: config.mailFrom,
+      to,
+      subject: 'Reset your password',
+      html: `<p>You requested a password reset. Click the link below to set a new password. This link expires in 1 hour.</p>
+             <p><a href="${resetUrl}">${resetUrl}</a></p>
+             <p>If you didn't request this, you can ignore this email.</p>`
+    });
+  } catch (e) {
+    console.error('Failed to send reset email:', (e as any)?.message || e);
+    console.log('[RESET LINK]', resetUrl);
+  }
+}
 
 // Public profile (for dashboard default view)
 app.get('/api/profile/public', async (_req, res) => {
@@ -46,10 +97,25 @@ app.get('/api/profile/public', async (_req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   const { email, password, name } = req.body as { email: string; password: string; name: string };
   if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
+  // Allow self-registration only on first deploy or when no profile exists yet
+  try {
+    const [userCount, profileCount] = await Promise.all([
+      prisma.user.count(),
+      prisma.profile.count()
+    ]);
+    // Permit registration if either there are no users yet OR there is no profile data yet
+    const registrationOpen = userCount === 0 || profileCount === 0;
+    if (!registrationOpen) {
+      return res.status(403).json({ error: 'Registration is disabled. Please sign in with an existing account.' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to check registration availability' });
+  }
   const hashed = await bcrypt.hash(password, 10);
   try {
-    const user = await prisma.user.create({ data: { email, password: hashed, name } });
-    return res.json({ id: user.id, email: user.email, name: user.name });
+    const user = await prisma.user.create({ data: { email, password: hashed, name, role: 'USER' as any } });
+    const token = jwt.sign({ sub: user.id, role: user.role }, config.jwtSecret, { expiresIn: '7d' });
+    return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
   } catch (e) {
     return res.status(400).json({ error: 'Email already exists' });
   }
@@ -63,6 +129,60 @@ app.post('/api/auth/login', async (req, res) => {
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
   const token = jwt.sign({ sub: user.id, role: user.role }, config.jwtSecret, { expiresIn: '7d' });
   res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+});
+
+// Request password reset (email)
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const email = String((req.body?.email ?? '') as string).trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Always respond OK to avoid enumeration
+    if (!user) return res.json({ ok: true });
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+    // store token
+    await prisma.$executeRawUnsafe(
+      'INSERT INTO password_resets (userId, token, expiresAt) VALUES (?, ?, ?)',
+      user.id,
+      token,
+      expiresAt.toISOString()
+    );
+    const resetUrl = `${config.clientUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+    await sendResetEmail(email, resetUrl);
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('forgot-password error:', (e as any)?.message || e);
+    return res.json({ ok: true }); // still OK to avoid leaking details
+  }
+});
+
+// Complete password reset with token
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const token = String((req.body?.token ?? '')).trim();
+    const newPassword = String((req.body?.newPassword ?? '')).trim();
+    if (!token || !newPassword) return res.status(400).json({ error: 'Missing token or new password' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    // Lookup token
+    const row: any = await prisma.$queryRawUnsafe('SELECT * FROM password_resets WHERE token = ? LIMIT 1', token);
+    const rec = Array.isArray(row) ? row[0] : row;
+    if (!rec) return res.status(400).json({ error: 'Invalid or expired token' });
+    if (rec.usedAt) return res.status(400).json({ error: 'Token already used' });
+    const now = Date.now();
+    const exp = new Date(rec.expiresAt).getTime();
+    if (!exp || now > exp) return res.status(400).json({ error: 'Invalid or expired token' });
+    // Update password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: Number(rec.userId) }, data: { password: hashed } });
+    // Mark token used and remove other outstanding tokens for this user
+    await prisma.$executeRawUnsafe('UPDATE password_resets SET usedAt = ? WHERE token = ?', new Date().toISOString(), token);
+    await prisma.$executeRawUnsafe('DELETE FROM password_resets WHERE userId = ? AND (usedAt IS NOT NULL OR expiresAt < ?)', Number(rec.userId), new Date().toISOString());
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('reset-password error:', (e as any)?.message || e);
+    return res.status(400).json({ error: 'Invalid or expired token' });
+  }
 });
 
 function auth(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -99,7 +219,8 @@ app.get('/api/profile/me', auth, async (req, res) => {
   res.json({ profile });
 });
 
-app.put('/api/profile/me', auth, requireAdmin, async (req, res) => {
+// Allow any authenticated user to create/update their own profile
+app.put('/api/profile/me', auth, async (req, res) => {
   const userId = (req as any).userId as number;
   // Coerce date-ish values: '', null, undefined => undefined; valid string/Date => Date
   const dateish = z.preprocess((val) => {
@@ -348,7 +469,8 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
-app.post('/api/profile/photo', auth, requireAdmin, upload.single('file'), async (req: any, res) => {
+// Allow any authenticated user to upload their own profile photo
+app.post('/api/profile/photo', auth, upload.single('file'), async (req: any, res) => {
   try {
     const file = req.file as any;
     if (!file) return res.status(400).json({ error: 'Missing file' });

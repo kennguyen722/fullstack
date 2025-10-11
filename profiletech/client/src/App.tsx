@@ -1,6 +1,8 @@
 import { Link, NavLink, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
 
@@ -68,14 +70,14 @@ export default function App() {
             >
               My Profile
             </NavLink>
-            {auth.user && (auth.user.role === 'ADMIN' || auth.user.email === 'admin@example.com') ? (
+            {Boolean(auth.token) && (
               <NavLink
                 to="/profile"
                 className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
               >
-                Update Profile
+                Edit Profile
               </NavLink>
-            ) : null}
+            )}
             {Boolean(auth.token) ? (
               <LogoutButton />
             ) : (
@@ -92,7 +94,9 @@ export default function App() {
       <div className="container py-4">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<RequireAdmin><Profile /></RequireAdmin>} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/myprofile" element={<MyProfile />} />
           <Route path="/" element={<Navigate to="/myprofile" replace />} />
         </Routes>

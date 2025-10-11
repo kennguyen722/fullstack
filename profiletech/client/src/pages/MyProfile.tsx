@@ -5,6 +5,7 @@ import { api } from '../shared/api';
 export default function MyProfile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [loginEmail, setLoginEmail] = useState<string | null>(null);
   // used to bust image cache when photo changes
   const [photoNonce, setPhotoNonce] = useState<number>(0);
   const [expOpen, setExpOpen] = useState(true);
@@ -58,16 +59,39 @@ export default function MyProfile() {
   useEffect(() => {
     // initial load
     refetchProfile();
+    // load login email from localStorage
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u?.email) setLoginEmail(String(u.email));
+      }
+    } catch {}
     // live updates when Profile page saves or uploads
     const onProfileUpdated = () => refetchProfile();
     const onStorage = (ev: StorageEvent) => {
       if (ev.key === 'profileUpdatedAt') refetchProfile();
+      if (ev.key === 'user') {
+        try {
+          const u = ev.newValue ? JSON.parse(ev.newValue) : null;
+          setLoginEmail(u?.email || null);
+        } catch { setLoginEmail(null); }
+      }
+    };
+    const onAuthChanged = () => {
+      try {
+        const raw = localStorage.getItem('user');
+        const u = raw ? JSON.parse(raw) : null;
+        setLoginEmail(u?.email || null);
+      } catch { setLoginEmail(null); }
     };
     window.addEventListener('profile-updated', onProfileUpdated as EventListener);
     window.addEventListener('storage', onStorage);
+    window.addEventListener('auth-changed', onAuthChanged as EventListener);
     return () => {
       window.removeEventListener('profile-updated', onProfileUpdated as EventListener);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('auth-changed', onAuthChanged as EventListener);
     };
   }, []);
 
@@ -81,6 +105,15 @@ export default function MyProfile() {
           {/* Side Nav (md and up) */}
           <aside className="col-md-3 d-none d-md-block">
             <div className="side-stack">
+            {loginEmail && (
+              <div className="facts-panel p-2 rounded-3 mb-2" aria-label="Account">
+                <div className="facts-title text-soft mb-1 d-flex align-items-center gap-2">
+                  <span>Account</span>
+                  <span className="badge-accent">Login</span>
+                </div>
+                <div className="small text-bright" title="Logged-in email">{loginEmail}</div>
+              </div>
+            )}
             <nav className="side-nav panel shadow-sm mb-2">
               <div className="side-title">Navigation</div>
               <ul className="list-unstyled mb-0">
