@@ -101,8 +101,18 @@ p { color: var(--text-muted); }
 .text-muted { color: var(--text-muted) !important; }
 
 /* Links */
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 2px; }
+a { color: var(--accent); text-decoration: none; transition: color 140ms ease, text-shadow 140ms ease; }
+/* Remove underline on hover; use color + subtle glow to indicate interactivity */
+a:hover {
+  color: var(--accent-strong);
+  text-decoration: none;
+  /* layered glow for stronger hover affordance */
+  text-shadow:
+    0 0 4px var(--accent-soft),
+    0 0 8px var(--accent-glow),
+    0 0 12px var(--accent-glow);
+}
+/* Keep focus styling for accessibility */
 a:focus { color: var(--accent-strong); outline: none; text-decoration: underline; text-underline-offset: 2px; }
 
 /* Navbar tweaks */
