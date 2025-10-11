@@ -29,12 +29,22 @@ export default function Profile() {
     leaderships: [],
     skills: []
   });
+  const [acct, setAcct] = useState<{ email: string; defaultEmail: string; defaultPassword: string } | null>(null);
+  const [pw, setPw] = useState<{ currentPassword: string; newPassword: string }>({ currentPassword: '', newPassword: '' });
+  const [emailChange, setEmailChange] = useState<{ currentPassword: string; newEmail: string }>({ currentPassword: '', newEmail: '' });
+  const [showEmailCur, setShowEmailCur] = useState(false);
+  const [showPwCur, setShowPwCur] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await api.get('/profile/me');
         if (res.data.profile) setData(res.data.profile);
+        // load account credential info
+        try {
+          const acctRes = await api.get('/account/credentials');
+          setAcct(acctRes.data);
+        } catch {}
       } catch (err: any) {
         setMessage({ type: 'danger', text: err?.response?.data?.error || 'Failed to load profile' });
       } finally {
@@ -161,6 +171,9 @@ export default function Profile() {
             {message.text}
           </div>
         )}
+      </div>
+      {/* Left: Main profile editor */}
+      <div className="col-12 col-lg-8">
         <div className="p-4 rounded border">
           <div className="row g-3">
             <div className="col-md-6">
@@ -198,75 +211,248 @@ export default function Profile() {
             </div>
           </div>
         </div>
+
+        <div className="row g-3 mt-3">
+          <div className="col-md-6">
+            <label htmlFor="pf-location" className="form-label">Location</label>
+            <input id="pf-location" className="form-control" placeholder="e.g., Remote · Worldwide" value={data.location || ''} onChange={e => setData({ ...data, location: e.target.value })} />
+          </div>
+          <div className="col-md-6">
+            <label htmlFor="pf-address" className="form-label">Address</label>
+            <input id="pf-address" className="form-control" placeholder="Street, City, State/Province" value={data.address || ''} onChange={e => setData({ ...data, address: e.target.value })} />
+          </div>
+          <div className="col-md-6">
+            <label htmlFor="pf-phone" className="form-label">Phone</label>
+            <input id="pf-phone" className="form-control" placeholder="e.g., +1 (555) 123-4567" value={data.phone || ''} onChange={e => setData({ ...data, phone: e.target.value })} />
+          </div>
+          <div className="col-md-6">
+            <label htmlFor="pf-availability" className="form-label">Availability</label>
+            <input id="pf-availability" className="form-control" placeholder="e.g., Open to full-time roles" value={data.availability || ''} onChange={e => setData({ ...data, availability: e.target.value })} />
+          </div>
+          <div className="col-12">
+            <label htmlFor="pf-focus" className="form-label">Focus areas</label>
+            <input id="pf-focus" className="form-control" placeholder="e.g., Platform architecture · Developer experience · Applied AI" value={data.focusAreas || ''} onChange={e => setData({ ...data, focusAreas: e.target.value })} />
+          </div>
+          <div className="col-md-6">
+            <label htmlFor="pf-email" className="form-label">Email</label>
+            <input id="pf-email" type="email" className={`form-control${errors.email ? ' is-invalid' : ''}`} placeholder="hello@example.com" value={data.email || ''} onChange={e => { setData({ ...data, email: e.target.value }); setErrors((prev:any) => ({ ...prev, email: undefined })); }} />
+            {errors.email && (<div className="invalid-feedback">{errors.email}</div>)}
+          </div>
+          <div className="col-md-6">
+            <label htmlFor="pf-linkedin" className="form-label">LinkedIn URL</label>
+            <input id="pf-linkedin" type="url" className={`form-control${errors.linkedin ? ' is-invalid' : ''}`} placeholder="https://www.linkedin.com/in/your-profile" value={data.linkedin || ''} onChange={e => { setData({ ...data, linkedin: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, linkedin: undefined })); }} />
+            {errors.linkedin && (<div className="invalid-feedback">{errors.linkedin}</div>)}
+          </div>
+          <div className="col-md-6">
+            <label htmlFor="pf-github" className="form-label">GitHub URL</label>
+            <input id="pf-github" type="url" className={`form-control${errors.github ? ' is-invalid' : ''}`} placeholder="https://github.com/your-handle" value={data.github || ''} onChange={e => { setData({ ...data, github: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, github: undefined })); }} />
+            {errors.github && (<div className="invalid-feedback">{errors.github}</div>)}
+          </div>
+        </div>
+
+        <EditableSection title="Experience" collectionKey="experiences" errors={errors} onClearError={clearError} items={data.experiences} setItems={(items) => setData({ ...data, experiences: items })} fields={[
+          { key: 'company', label: 'Company' },
+          { key: 'role', label: 'Role' },
+          { key: 'startDate', label: 'Start Date' },
+          { key: 'endDate', label: 'End Date' },
+          { key: 'description', label: 'Description', textarea: true }
+        ]} />
+
+        <EditableSection title="Education" collectionKey="educations" errors={errors} onClearError={clearError} items={data.educations} setItems={(items) => setData({ ...data, educations: items })} fields={[
+          { key: 'school', label: 'School' },
+          { key: 'degree', label: 'Degree' },
+          { key: 'field', label: 'Field' },
+          { key: 'startDate', label: 'Start Date' },
+          { key: 'endDate', label: 'End Date' },
+          { key: 'description', label: 'Description', textarea: true }
+        ]} />
+
+        <EditableSection title="Leadership" collectionKey="leaderships" errors={errors} onClearError={clearError} items={data.leaderships} setItems={(items) => setData({ ...data, leaderships: items })} fields={[
+          { key: 'organization', label: 'Organization' },
+          { key: 'title', label: 'Title' },
+          { key: 'startDate', label: 'Start Date' },
+          { key: 'endDate', label: 'End Date' },
+          { key: 'description', label: 'Description', textarea: true }
+        ]} />
+
+        <EditableSection title="Skills" collectionKey="skills" errors={errors} onClearError={clearError} items={data.skills} setItems={(items) => setData({ ...data, skills: items })} fields={[
+          { key: 'description', label: 'Description', textarea: true }
+        ]} />
+
+        <div className="mt-3">
+          <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save Profile'}</button>
+        </div>
       </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-location" className="form-label">Location</label>
-                    <input id="pf-location" className="form-control" placeholder="e.g., Remote · Worldwide" value={data.location || ''} onChange={e => setData({ ...data, location: e.target.value })} />
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-address" className="form-label">Address</label>
-                    <input id="pf-address" className="form-control" placeholder="Street, City, State/Province" value={data.address || ''} onChange={e => setData({ ...data, address: e.target.value })} />
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-phone" className="form-label">Phone</label>
-                    <input id="pf-phone" className="form-control" placeholder="e.g., +1 (555) 123-4567" value={data.phone || ''} onChange={e => setData({ ...data, phone: e.target.value })} />
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-availability" className="form-label">Availability</label>
-                    <input id="pf-availability" className="form-control" placeholder="e.g., Open to full-time roles" value={data.availability || ''} onChange={e => setData({ ...data, availability: e.target.value })} />
-                  </div>
-                  <div className="col-12">
-                    <label htmlFor="pf-focus" className="form-label">Focus areas</label>
-                    <input id="pf-focus" className="form-control" placeholder="e.g., Platform architecture · Developer experience · Applied AI" value={data.focusAreas || ''} onChange={e => setData({ ...data, focusAreas: e.target.value })} />
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-email" className="form-label">Email</label>
-                    <input id="pf-email" type="email" className={`form-control${errors.email ? ' is-invalid' : ''}`} placeholder="hello@example.com" value={data.email || ''} onChange={e => { setData({ ...data, email: e.target.value }); setErrors((prev:any) => ({ ...prev, email: undefined })); }} />
-                    {errors.email && (<div className="invalid-feedback">{errors.email}</div>)}
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-linkedin" className="form-label">LinkedIn URL</label>
-                    <input id="pf-linkedin" type="url" className={`form-control${errors.linkedin ? ' is-invalid' : ''}`} placeholder="https://www.linkedin.com/in/your-profile" value={data.linkedin || ''} onChange={e => { setData({ ...data, linkedin: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, linkedin: undefined })); }} />
-                    {errors.linkedin && (<div className="invalid-feedback">{errors.linkedin}</div>)}
-                  </div>
-                  <div className="col-md-6">
-                    <label htmlFor="pf-github" className="form-label">GitHub URL</label>
-                    <input id="pf-github" type="url" className={`form-control${errors.github ? ' is-invalid' : ''}`} placeholder="https://github.com/your-handle" value={data.github || ''} onChange={e => { setData({ ...data, github: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, github: undefined })); }} />
-                    {errors.github && (<div className="invalid-feedback">{errors.github}</div>)}
-                  </div>
 
-      <EditableSection title="Experience" collectionKey="experiences" errors={errors} onClearError={clearError} items={data.experiences} setItems={(items) => setData({ ...data, experiences: items })} fields={[
-        { key: 'company', label: 'Company' },
-        { key: 'role', label: 'Role' },
-        { key: 'startDate', label: 'Start Date' },
-        { key: 'endDate', label: 'End Date' },
-        { key: 'description', label: 'Description', textarea: true }
-      ]} />
-
-      <EditableSection title="Education" collectionKey="educations" errors={errors} onClearError={clearError} items={data.educations} setItems={(items) => setData({ ...data, educations: items })} fields={[
-        { key: 'school', label: 'School' },
-        { key: 'degree', label: 'Degree' },
-        { key: 'field', label: 'Field' },
-        { key: 'startDate', label: 'Start Date' },
-        { key: 'endDate', label: 'End Date' },
-        { key: 'description', label: 'Description', textarea: true }
-      ]} />
-
-      <EditableSection title="Leadership" collectionKey="leaderships" errors={errors} onClearError={clearError} items={data.leaderships} setItems={(items) => setData({ ...data, leaderships: items })} fields={[
-        { key: 'organization', label: 'Organization' },
-        { key: 'title', label: 'Title' },
-        { key: 'startDate', label: 'Start Date' },
-        { key: 'endDate', label: 'End Date' },
-        { key: 'description', label: 'Description', textarea: true }
-      ]} />
-
-      <EditableSection title="Skills" collectionKey="skills" errors={errors} onClearError={clearError} items={data.skills} setItems={(items) => setData({ ...data, skills: items })} fields={[
-        { key: 'description', label: 'Description', textarea: true }
-      ]} />
-
-      <div className="col-12">
-        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save Profile'}</button>
-      </div>
+      {/* Right: Sticky Account panel */}
+      <aside className="col-12 col-lg-4">
+        <div className="account-sticky">
+          <div className="card p-3">
+            <h4 className="text-accent mb-3">Account</h4>
+            <div className="row g-3 align-items-end">
+              <div className="col-12">
+                <label htmlFor="pf-acct-email" className="form-label">Login email</label>
+                <input id="pf-acct-email" className="form-control" value={acct?.email || ''} readOnly title="Current login email" />
+                <div className="form-text">Default: {acct?.defaultEmail || '(not set)'} </div>
+              </div>
+              <div className="col-12">
+                <label htmlFor="pf-acct-newemail" className="form-label">New email</label>
+                <input id="pf-acct-newemail" type="email" className="form-control" placeholder="name@example.com" value={emailChange.newEmail} onChange={(e) => setEmailChange({ ...emailChange, newEmail: e.target.value })} />
+              </div>
+              <div className="col-12">
+                <label htmlFor="pf-acct-cur-for-email" className="form-label">Current password (for email change)</label>
+                <div className="input-group">
+                  <input
+                    id="pf-acct-cur-for-email"
+                    type={showEmailCur ? 'text' : 'password'}
+                    className="form-control"
+                    placeholder="Enter current password"
+                    name="current-password"
+                    autoComplete="current-password"
+                    value={emailChange.currentPassword}
+                    onChange={(e) => setEmailChange({ ...emailChange, currentPassword: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-light"
+                    aria-label={showEmailCur ? 'Hide current password' : 'Show current password'}
+                    onClick={() => setShowEmailCur(v => !v)}
+                  >
+                    {showEmailCur ? (
+                      // eye-off icon
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.58-1.36 1.52-2.62 2.73-3.68"/>
+                        <path d="M10.58 10.58a2 2 0 1 0 2.83 2.83"/>
+                        <path d="M6.1 6.1 1 1m22 22-5.1-5.1M21.82 12c-.61 1.45-1.6 2.77-2.88 3.86"/>
+                      </svg>
+                    ) : (
+                      // eye icon
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="col-12 d-flex gap-2">
+                <button
+                  className="btn btn-outline-light"
+                  onClick={async () => {
+                    setMessage(null);
+                    try {
+                      if (!emailChange.newEmail || !emailChange.currentPassword) {
+                        setMessage({ type: 'danger', text: 'Enter new email and current password.' });
+                        return;
+                      }
+                      const res = await api.put('/account/email', emailChange);
+                      // Update displayed email then force re-login to refresh token bound context
+                      setAcct((prev) => prev ? { ...prev, email: res.data?.user?.email || prev.email } : prev);
+                      setEmailChange({ currentPassword: '', newEmail: '' });
+                      setMessage({ type: 'success', text: 'Email updated. Redirecting to login...' });
+                      setTimeout(() => {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                      }, 800);
+                    } catch (err: any) {
+                      setMessage({ type: 'danger', text: err?.response?.data?.error || 'Failed to update email' });
+                    }
+                  }}
+                >
+                  Change email
+                </button>
+              </div>
+              <div className="col-12">
+                <label htmlFor="pf-acct-cur-for-pw" className="form-label">Current password</label>
+                <div className="input-group">
+                  <input
+                    id="pf-acct-cur-for-pw"
+                    type={showPwCur ? 'text' : 'password'}
+                    className="form-control"
+                    placeholder="Enter current password"
+                    name="current-password"
+                    autoComplete="current-password"
+                    value={pw.currentPassword}
+                    onChange={(e) => setPw({ ...pw, currentPassword: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-light"
+                    aria-label={showPwCur ? 'Hide current password' : 'Show current password'}
+                    onClick={() => setShowPwCur(v => !v)}
+                  >
+                    {showPwCur ? (
+                      // eye-off icon
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.58-1.36 1.52-2.62 2.73-3.68"/>
+                        <path d="M10.58 10.58a2 2 0 1 0 2.83 2.83"/>
+                        <path d="M6.1 6.1 1 1m22 22-5.1-5.1M21.82 12c-.61 1.45-1.6 2.77-2.88 3.86"/>
+                      </svg>
+                    ) : (
+                      // eye icon
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="col-12">
+                <label className="form-label">New password</label>
+                <input type="password" name="new-password" autoComplete="new-password" className="form-control" value={pw.newPassword} onChange={(e) => setPw({ ...pw, newPassword: e.target.value })} placeholder="At least 8 characters" />
+              </div>
+              <div className="col-12 d-flex gap-2">
+                <button
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    setMessage(null);
+                    try {
+                      if (!pw.currentPassword || !pw.newPassword) {
+                        setMessage({ type: 'danger', text: 'Enter current and new password.' });
+                        return;
+                      }
+                      await api.put('/account/password', pw);
+                      setMessage({ type: 'success', text: 'Password updated. Redirecting to login...' });
+                      setPw({ currentPassword: '', newPassword: '' });
+                      setTimeout(() => {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                      }, 800);
+                    } catch (err: any) {
+                      setMessage({ type: 'danger', text: err?.response?.data?.error || 'Failed to update password' });
+                    }
+                  }}
+                >
+                  Change password
+                </button>
+                <button
+                  className="btn btn-outline-light"
+                  onClick={async () => {
+                    if (!confirm('Reset admin email/password to defaults from server env?')) return;
+                    setMessage(null);
+                    try {
+                      const res = await api.post('/account/reset');
+                      // After reset, update acct email and clear fields
+                      setAcct((prev) => prev ? { ...prev, email: res.data?.user?.email || prev.email } : prev);
+                      setPw({ currentPassword: '', newPassword: '' });
+                      setMessage({ type: 'success', text: 'Credentials reset. Redirecting to login...' });
+                      setTimeout(() => {
+                        localStorage.removeItem('token');
+                        window.location.href = '/login';
+                      }, 800);
+                    } catch (err: any) {
+                      setMessage({ type: 'danger', text: err?.response?.data?.error || 'Failed to reset credentials' });
+                    }
+                  }}
+                >
+                  Reset to default
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
@@ -297,7 +483,7 @@ function EditableSection({ title, items, setItems, fields, errors, onClearError,
           <div className="card p-3" key={idx}>
             <div className="row g-3">
               {fields.map((f) => (
-                <div className="col-md-6" key={f.key}>
+                <div className={f.textarea ? "col-12" : "col-md-6"} key={f.key}>
                   <label htmlFor={`pf-${title}-${idx}-${f.key}`} className="form-label">{f.label}</label>
                   {f.textarea ? (
                     <textarea id={`pf-${title}-${idx}-${f.key}`} className={`form-control${errors?.[collectionKey]?.[idx]?.[f.key] ? ' is-invalid' : ''}`} rows={3} placeholder={f.label} value={item[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} />

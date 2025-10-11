@@ -363,6 +363,13 @@ a:focus { color: var(--accent-strong); outline: none; text-decoration: underline
   border: 1px solid rgba(255,255,255,0.1);
 }
 
+/* Sticky right-side account panel */
+.account-sticky {
+  position: sticky;
+  top: 88px; /* keep below navbar */
+  z-index: 2;
+}
+
 
 /* Responsive image sizing helper (kept for other uses if needed) */
 .photo-card-img {

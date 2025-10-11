@@ -27,10 +27,18 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // Public profile (for dashboard default view)
 app.get('/api/profile/public', async (_req, res) => {
-  const profile = await prisma.profile.findFirst({
+  // Prefer the env-configured admin email; if not found, fallback to any ADMIN user's profile
+  let profile = await prisma.profile.findFirst({
     where: { user: { email: config.adminEmail } },
     include: { experiences: true, educations: true, leaderships: true, skills: true }
   });
+  if (!profile) {
+    profile = await prisma.profile.findFirst({
+      where: { user: { role: 'ADMIN' as any } },
+      include: { experiences: true, educations: true, leaderships: true, skills: true },
+      orderBy: { userId: 'asc' }
+    });
+  }
   res.json({ profile });
 });
 
@@ -357,6 +365,73 @@ app.post('/api/profile/photo', auth, requireAdmin, upload.single('file'), async 
   } catch (err: any) {
     console.error('Upload error:', err?.message || err);
     return res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Account management endpoints (admin only)
+// Get current email and defaults (do not expose actual current password)
+app.get('/api/account/credentials', auth, requireAdmin, async (req, res) => {
+  const userId = (req as any).userId as number;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const reveal = String((req.query?.reveal ?? '') as any) === '1';
+  res.json({
+    email: user.email,
+    defaultEmail: config.adminEmail,
+    defaultPassword: config.adminPassword ? (reveal ? String(config.adminPassword) : '********') : ''
+  });
+});
+
+// Change password (requires current password for safety)
+app.put('/api/account/password', auth, requireAdmin, async (req, res) => {
+  const userId = (req as any).userId as number;
+  const body = (req.body || {}) as { currentPassword?: string; newPassword?: string };
+  const currentPassword = String(body.currentPassword || '');
+  const newPassword = String(body.newPassword || '');
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const ok = await bcrypt.compare(currentPassword, user.password);
+  if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+  res.json({ ok: true });
+});
+
+// Reset credentials back to defaults from env
+app.post('/api/account/reset', auth, requireAdmin, async (req, res) => {
+  const userId = (req as any).userId as number;
+  const email = config.adminEmail;
+  const rawPassword = config.adminPassword;
+  if (!email || !rawPassword) return res.status(400).json({ error: 'Default admin credentials not configured' });
+  const hashed = await bcrypt.hash(rawPassword, 10);
+  try {
+    const user = await prisma.user.update({ where: { id: userId }, data: { email, password: hashed, role: 'ADMIN' as any } });
+    res.json({ ok: true, user: { id: user.id, email: user.email } });
+  } catch (err: any) {
+    return res.status(400).json({ error: 'Failed to reset credentials (email may be in use)' });
+  }
+});
+
+// Change email (requires current password)
+app.put('/api/account/email', auth, requireAdmin, async (req, res) => {
+  const userId = (req as any).userId as number;
+  const body = (req.body || {}) as { currentPassword?: string; newEmail?: string };
+  const currentPassword = String(body.currentPassword || '');
+  const newEmail = String(body.newEmail || '').trim();
+  if (!currentPassword || !newEmail) return res.status(400).json({ error: 'Missing fields' });
+  const basic = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!basic.test(newEmail)) return res.status(400).json({ error: 'Enter a valid email address' });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const ok = await bcrypt.compare(currentPassword, user.password);
+  if (!ok) return res.status(401).json({ error: 'Current password is incorrect' });
+  try {
+    const updated = await prisma.user.update({ where: { id: userId }, data: { email: newEmail } });
+    return res.json({ ok: true, user: { id: updated.id, email: updated.email } });
+  } catch (err: any) {
+    return res.status(400).json({ error: 'Email already in use' });
   }
 });
 
