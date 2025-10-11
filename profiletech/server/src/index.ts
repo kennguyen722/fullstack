@@ -253,18 +253,9 @@ app.get('/api/profile/public', async (_req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   const { email, password, name } = req.body as { email: string; password: string; name: string };
   if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
-  try {
-    const [userCount, profileCount] = await Promise.all([
-      prisma.user.count(),
-      prisma.profile.count()
-    ]);
-    const registrationOpen = userCount === 0 || profileCount === 0;
-    if (!registrationOpen) return res.status(403).json({ error: 'Registration is disabled. Please sign in.' });
-  } catch {
-    return res.status(500).json({ error: 'Failed to check registration availability' });
-  }
   const hashed = await bcrypt.hash(password, 10);
   try {
+    // Create user with default role USER
     const user = await prisma.user.create({ data: { email, password: hashed, name, role: 'USER' } });
     const token = jwt.sign({ sub: user.id, role: user.role }, config.jwtSecret, { expiresIn: '7d' });
     return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
@@ -417,6 +408,14 @@ app.put('/api/profile/me', auth, async (req, res) => {
     summary: z.string().optional().default(''),
     displayName: z.string().optional().default(''),
     photoUrl: z.string().trim().optional().default(''),
+    // Optional custom public profile name (slug)
+    profileName: z.preprocess((val) => {
+      if (val === null || val === undefined) return undefined;
+      const s = String(val).trim().toLowerCase();
+      if (!s) return undefined;
+      const norm = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+      return norm || undefined;
+    }, z.string().min(3).max(80).optional()),
     location: z.string().optional().default(''),
     address: z.string().optional().default(''),
     phone: z.string().optional().default(''),
@@ -478,7 +477,17 @@ app.put('/api/profile/me', auth, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() });
   }
-  const { headline, summary, displayName, photoUrl, location, address, phone, availability, focusAreas, email, linkedin, github, experiences, educations, leaderships, skills } = parsed.data as any;
+  const { headline, summary, displayName, photoUrl, profileName, location, address, phone, availability, focusAreas, email, linkedin, github, experiences, educations, leaderships, skills } = parsed.data as any;
+
+  // Validate desired slug uniqueness if provided
+  let slugToUse: string | undefined = undefined;
+  if (typeof profileName === 'string' && profileName.length >= 3) {
+    const existingBySlug = await prisma.profile.findUnique({ where: { slug: profileName }, select: { id: true, userId: true } });
+    if (existingBySlug && existingBySlug.userId !== userId) {
+      return res.status(400).json({ error: 'Profile name is already in use' });
+    }
+    slugToUse = profileName;
+  }
 
   const saneExperiences = Array.isArray(experiences) ? experiences
     .map((e: any) => ({
@@ -522,8 +531,8 @@ app.put('/api/profile/me', auth, async (req, res) => {
   await prisma.$transaction(async (tx: any) => {
       const upsert = await tx.profile.upsert({
         where: { userId },
-        create: { userId, headline: headline || '', summary: summary || '', displayName: displayName || '', photoUrl: photoUrl || '', location: location || '', address: address || '', phone: phone || '', availability: availability || '', focusAreas: focusAreas || '', email: email || '', linkedin: linkedin || '', github: github || '' },
-        update: { headline: headline || '', summary: summary || '', displayName: displayName || '', photoUrl: photoUrl || '', location: location || '', address: address || '', phone: phone || '', availability: availability || '', focusAreas: focusAreas || '', email: email || '', linkedin: linkedin || '', github: github || '' }
+        create: { userId, headline: headline || '', summary: summary || '', displayName: displayName || '', photoUrl: photoUrl || '', slug: slugToUse, location: location || '', address: address || '', phone: phone || '', availability: availability || '', focusAreas: focusAreas || '', email: email || '', linkedin: linkedin || '', github: github || '' },
+        update: { headline: headline || '', summary: summary || '', displayName: displayName || '', photoUrl: photoUrl || '', ...(slugToUse ? { slug: slugToUse } : {}), location: location || '', address: address || '', phone: phone || '', availability: availability || '', focusAreas: focusAreas || '', email: email || '', linkedin: linkedin || '', github: github || '' }
       });
 
       await tx.experience.deleteMany({ where: { profileId: upsert.id } });
@@ -617,6 +626,15 @@ app.get('/api/profile/p/:publicId/:slug?', async (req, res) => {
   if (slug && profile.slug && slug !== profile.slug) {
     return res.status(307).json({ redirect: `/api/profile/p/${profile.publicId}/${profile.slug}` });
   }
+  return res.json({ profile });
+});
+
+// --- Public read by slug only ---
+app.get('/api/profile/slug/:slug', async (req, res) => {
+  const slug = (req.params.slug || '').trim().toLowerCase();
+  if (!slug) return res.status(400).json({ error: 'Invalid profile name' });
+  const profile = await prisma.profile.findUnique({ where: { slug }, include: { experiences: true, educations: true, leaderships: true, skills: true } });
+  if (!profile) return res.status(404).json({ error: 'Profile not found' });
   return res.json({ profile });
 });
 // --- Account management (admin only) ---

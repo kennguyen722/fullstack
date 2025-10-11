@@ -6,6 +6,18 @@ if [ -z "$DATABASE_URL" ]; then
   export DATABASE_URL="file:/app/server/data/dev.db"
 fi
 
+# Optionally wipe the SQLite database when requested
+WIPE_FLAG=${WIPE_DB:-false}
+if [ "$1" = "wipe-db" ]; then
+  WIPE_FLAG=true
+  shift
+fi
+if [ "$WIPE_FLAG" = "true" ]; then
+  echo "[entrypoint] Wiping SQLite data directory..."
+  rm -f /app/server/data/*.db || true
+  rm -rf /app/server/data/*.db-journal || true
+fi
+
 # Prepare prisma (migrate dev --name "init" is not suitable in prod; use migrate deploy)
 # Apply migrations if possible (ignore failures to avoid crash on first boot issues)
 npm run prisma -- migrate deploy || true

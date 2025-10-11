@@ -357,6 +357,27 @@ To remove volumes (database and uploads):
 docker compose down -v
 ```
 
+### Optional: reset the DB (containerized)
+
+By default, the SQLite database is persisted in a Docker volume. If you want to wipe it on the next start, you have two safe options:
+
+1) Use the provided override to set WIPE_DB=true for a one-time reset on startup:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.wipe.yml up -d
+```
+
+This tells the server entrypoint to delete the SQLite files before running migrations and seeding. All existing data in the DB volume will be removed.
+
+2) Invoke the entrypoint with the wipe argument (one-off task), then bring services back up:
+
+```
+docker compose run --rm server ./docker-entrypoint.sh wipe-db
+docker compose up -d
+```
+
+Warning: Both options irreversibly delete the SQLite DB contents from the server_data volume. Only use them when you explicitly intend to start fresh.
+
 ### Troubleshooting
 - If you change `VITE_API_URL`, rebuild the client: `docker compose build client && docker compose up -d client`.
 - Check logs: `docker compose logs -f server` and `docker compose logs -f client`.

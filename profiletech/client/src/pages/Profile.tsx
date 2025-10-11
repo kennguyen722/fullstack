@@ -11,10 +11,12 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
   const [errors, setErrors] = useState<any>({});
+  const [dirty, setDirty] = useState(false);
   const [data, setData] = useState<any>({
     headline: '',
     summary: '',
     displayName: '',
+    profileName: '',
     photoUrl: '',
     location: '',
     address: '',
@@ -45,7 +47,11 @@ export default function Profile() {
     (async () => {
       try {
         const res = await api.get('/profile/me');
-        if (res.data.profile) setData(res.data.profile);
+        if (res.data.profile) {
+          const p = res.data.profile;
+          // Map server 'slug' to UI 'profileName' so the field shows the stored value
+          setData({ ...p, profileName: p.slug || '' });
+        }
         // load account credential info
         try {
           const acctRes = await api.get('/account/credentials');
@@ -85,6 +91,27 @@ export default function Profile() {
     };
   }, []);
 
+  // Listen for navbar-triggered save
+  useEffect(() => {
+    const onSave = () => { if (!saving) save(); };
+    window.addEventListener('profile-save', onSave);
+    return () => window.removeEventListener('profile-save', onSave);
+  }, [saving, data]);
+
+  // Warn on navigation/refresh if there are unsaved changes
+  useEffect(() => {
+    const beforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+      return undefined;
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [dirty]);
+
   // Apply theme immediately when changed here
   useEffect(() => {
     const root = document.documentElement;
@@ -100,6 +127,13 @@ export default function Profile() {
   function validate(): boolean {
     const nextErrors: any = {};
     // simple fields
+    if (data.profileName) {
+      const s = String(data.profileName).trim().toLowerCase();
+      const norm = s.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (norm.length < 3) nextErrors.profileName = 'Profile name must be at least 3 characters';
+      if (norm.length > 80) nextErrors.profileName = 'Profile name is too long';
+      if (!/^[a-z0-9-]+$/.test(norm)) nextErrors.profileName = 'Only letters, numbers, and dashes allowed';
+    }
     if (data.email && !isEmailValid(data.email)) {
       nextErrors.email = 'Enter a valid email or leave empty';
     }
@@ -162,8 +196,19 @@ export default function Profile() {
     });
   };
 
+  // Mark dirty on any field change wrapper
+  const setDataDirty = (next: any) => {
+    setData(next);
+    if (!dirty) {
+      setDirty(true);
+      window.dispatchEvent(new CustomEvent('profile-dirty', { detail: { dirty: true } }));
+    }
+  };
+
   async function save() {
     setSaving(true);
+    // notify navbar
+    window.dispatchEvent(new CustomEvent('profile-saving', { detail: { saving: true } }));
     setMessage(null);
     try {
       // client-side validation first
@@ -171,15 +216,24 @@ export default function Profile() {
         setMessage({ type: 'danger', text: 'Please fix the highlighted fields.' });
         return;
       }
-      await api.put('/profile/me', data);
-      setMessage({ type: 'success', text: 'Profile saved' });
+  const res = await api.put('/profile/me', data);
+  // Reflect saved data including slug -> profileName
+  const p = res.data?.profile;
+  if (p) setData({ ...p, profileName: p.slug || data.profileName || '' });
+  setMessage({ type: 'success', text: 'Profile saved' });
       // notify other tabs/components
       localStorage.setItem('profileUpdatedAt', String(Date.now()));
       window.dispatchEvent(new Event('profile-updated'));
+      // clear dirty
+      if (dirty) {
+        setDirty(false);
+        window.dispatchEvent(new CustomEvent('profile-dirty', { detail: { dirty: false } }));
+      }
     } catch (err: any) {
       setMessage({ type: 'danger', text: err?.response?.data?.error || 'Failed to save profile' });
     } finally {
       setSaving(false);
+      window.dispatchEvent(new CustomEvent('profile-saving', { detail: { saving: false } }));
     }
   }
 
@@ -218,11 +272,27 @@ export default function Profile() {
           <div className="row g-3">
             <div className="col-md-6">
               <label htmlFor="pf-headline" className="form-label">Headline</label>
-              <input id="pf-headline" className="form-control" placeholder="Senior Software Engineer" value={data.headline || ''} onChange={e => setData({ ...data, headline: e.target.value })} />
+              <input id="pf-headline" className="form-control" placeholder="Senior Software Engineer" value={data.headline || ''} onChange={e => setDataDirty({ ...data, headline: e.target.value })} />
             </div>
             <div className="col-md-6">
               <label htmlFor="pf-displayname" className="form-label">Display name</label>
-              <input id="pf-displayname" className="form-control" placeholder="Your name (sidebar title)" value={data.displayName || ''} onChange={e => setData({ ...data, displayName: e.target.value })} />
+              <input id="pf-displayname" className="form-control" placeholder="Your name (sidebar title)" value={data.displayName || ''} onChange={e => setDataDirty({ ...data, displayName: e.target.value })} />
+            </div>
+            <div className="col-md-6">
+              <label htmlFor="pf-profilename" className="form-label">Profile name (public URL)</label>
+              <input
+                id="pf-profilename"
+                className={`form-control${errors.profileName ? ' is-invalid' : ''}`}
+                placeholder="e.g., ken-nguyen"
+                value={data.profileName || ''}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setDataDirty({ ...data, profileName: raw });
+                  setErrors((prev:any) => ({ ...prev, profileName: undefined }));
+                }}
+              />
+              <div className="form-text">Your public link: <code>/p/&lt;profile-name&gt;</code></div>
+              {errors.profileName && (<div className="invalid-feedback">{errors.profileName}</div>)}
             </div>
             <div className="col-md-8">
               <label htmlFor="pf-photo-file" className="form-label">Profile photo</label>
@@ -239,7 +309,7 @@ export default function Profile() {
                   <div className="text-muted-2 small">Upload a photo to preview</div>
                 )}
                 {data.photoUrl && (
-                  <button type="button" className="btn btn-sm btn-outline-light" onClick={() => setData((p: any) => ({ ...p, photoUrl: '' }))}>
+                  <button type="button" className="btn btn-sm btn-outline-light" onClick={() => setDataDirty((p: any) => ({ ...p, photoUrl: '' }))}>
                     Remove
                   </button>
                 )}
@@ -247,7 +317,7 @@ export default function Profile() {
             </div>
             <div className="col-12">
               <label htmlFor="pf-summary" className="form-label">Professional Summary</label>
-              <textarea id="pf-summary" className="form-control" rows={3} placeholder="Short professional summary" value={data.summary || ''} onChange={e => setData({ ...data, summary: e.target.value })} />
+              <textarea id="pf-summary" className="form-control" rows={3} placeholder="Short professional summary" value={data.summary || ''} onChange={e => setDataDirty({ ...data, summary: e.target.value })} />
             </div>
           </div>
         </div>
@@ -255,42 +325,62 @@ export default function Profile() {
         <div className="row g-3 mt-3">
           <div className="col-md-6">
             <label htmlFor="pf-location" className="form-label">Work Location</label>
-            <input id="pf-location" className="form-control" placeholder="e.g., Remote · Worldwide" value={data.location || ''} onChange={e => setData({ ...data, location: e.target.value })} />
+            <input id="pf-location" className="form-control" placeholder="e.g., Remote · Worldwide" value={data.location || ''} onChange={e => setDataDirty({ ...data, location: e.target.value })} />
           </div>
           <div className="col-md-6">
             <label htmlFor="pf-address" className="form-label">Home Address</label>
-            <input id="pf-address" className="form-control" placeholder="Street, City, State/Province" value={data.address || ''} onChange={e => setData({ ...data, address: e.target.value })} />
+            <input id="pf-address" className="form-control" placeholder="Street, City, State/Province" value={data.address || ''} onChange={e => setDataDirty({ ...data, address: e.target.value })} />
           </div>
           <div className="col-md-6">
             <label htmlFor="pf-phone" className="form-label">Cell Phone</label>
-            <input id="pf-phone" className="form-control" placeholder="e.g., +1 (555) 123-4567" value={data.phone || ''} onChange={e => setData({ ...data, phone: e.target.value })} />
+            <input id="pf-phone" className="form-control" placeholder="e.g., +1 (555) 123-4567" value={data.phone || ''} onChange={e => setDataDirty({ ...data, phone: e.target.value })} />
           </div>
           <div className="col-md-6">
             <label htmlFor="pf-availability" className="form-label">Availability</label>
-            <input id="pf-availability" className="form-control" placeholder="e.g., Open to full-time roles" value={data.availability || ''} onChange={e => setData({ ...data, availability: e.target.value })} />
+            <input id="pf-availability" className="form-control" placeholder="e.g., Open to full-time roles" value={data.availability || ''} onChange={e => setDataDirty({ ...data, availability: e.target.value })} />
           </div>
           <div className="col-12">
             <label htmlFor="pf-focus" className="form-label">Focus areas</label>
-            <input id="pf-focus" className="form-control" placeholder="e.g., Platform architecture · Developer experience · Applied AI" value={data.focusAreas || ''} onChange={e => setData({ ...data, focusAreas: e.target.value })} />
+            <input id="pf-focus" className="form-control" placeholder="e.g., Platform architecture · Developer experience · Applied AI" value={data.focusAreas || ''} onChange={e => setDataDirty({ ...data, focusAreas: e.target.value })} />
           </div>
           <div className="col-md-6">
             <label htmlFor="pf-email" className="form-label">Email</label>
-            <input id="pf-email" type="email" className={`form-control${errors.email ? ' is-invalid' : ''}`} placeholder="hello@example.com" value={data.email || ''} onChange={e => { setData({ ...data, email: e.target.value }); setErrors((prev:any) => ({ ...prev, email: undefined })); }} />
+            <input id="pf-email" type="email" className={`form-control${errors.email ? ' is-invalid' : ''}`} placeholder="hello@example.com" value={data.email || ''} onChange={e => { setDataDirty({ ...data, email: e.target.value }); setErrors((prev:any) => ({ ...prev, email: undefined })); }} />
             {errors.email && (<div className="invalid-feedback">{errors.email}</div>)}
           </div>
           <div className="col-md-6">
             <label htmlFor="pf-linkedin" className="form-label">LinkedIn URL</label>
-            <input id="pf-linkedin" type="url" className={`form-control${errors.linkedin ? ' is-invalid' : ''}`} placeholder="https://www.linkedin.com/in/your-profile" value={data.linkedin || ''} onChange={e => { setData({ ...data, linkedin: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, linkedin: undefined })); }} />
+            <input id="pf-linkedin" type="url" className={`form-control${errors.linkedin ? ' is-invalid' : ''}`} placeholder="https://www.linkedin.com/in/your-profile" value={data.linkedin || ''} onChange={e => { setDataDirty({ ...data, linkedin: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, linkedin: undefined })); }} />
             {errors.linkedin && (<div className="invalid-feedback">{errors.linkedin}</div>)}
           </div>
           <div className="col-md-6">
             <label htmlFor="pf-github" className="form-label">GitHub URL</label>
-            <input id="pf-github" type="url" className={`form-control${errors.github ? ' is-invalid' : ''}`} placeholder="https://github.com/your-handle" value={data.github || ''} onChange={e => { setData({ ...data, github: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, github: undefined })); }} />
+            <input id="pf-github" type="url" className={`form-control${errors.github ? ' is-invalid' : ''}`} placeholder="https://github.com/your-handle" value={data.github || ''} onChange={e => { setDataDirty({ ...data, github: e.target.value || '' }); setErrors((prev:any) => ({ ...prev, github: undefined })); }} />
             {errors.github && (<div className="invalid-feedback">{errors.github}</div>)}
           </div>
         </div>
 
-        <EditableSection title="Professional Experience" collectionKey="experiences" errors={errors} onClearError={clearError} items={data.experiences} setItems={(items) => setData({ ...data, experiences: items })} fields={[
+        {data.profileName && (
+          <div className="mt-2 d-flex align-items-center gap-2">
+            <span className="text-soft small">Public link:</span>
+            <code className="small">/p/{String(data.profileName).trim()}</code>
+            <button
+              className="btn btn-sm btn-outline-light"
+              onClick={async () => {
+                try {
+                  const origin = window.location.origin;
+                  const url = `${origin}/p/${encodeURIComponent(String(data.profileName).trim())}`;
+                  await navigator.clipboard.writeText(url);
+                  setMessage({ type: 'success', text: 'Public link copied to clipboard' });
+                } catch {
+                  setMessage({ type: 'danger', text: 'Failed to copy link' });
+                }
+              }}
+            >Copy link</button>
+          </div>
+        )}
+
+  <EditableSection title="Professional Experience" collectionKey="experiences" errors={errors} onClearError={clearError} items={data.experiences} setItems={(items) => setDataDirty({ ...data, experiences: items })} fields={[
           { key: 'company', label: 'Company' },
           { key: 'role', label: 'Role' },
           { key: 'startDate', label: 'Start Date' },
@@ -298,7 +388,7 @@ export default function Profile() {
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 
-        <EditableSection title="Education" collectionKey="educations" errors={errors} onClearError={clearError} items={data.educations} setItems={(items) => setData({ ...data, educations: items })} fields={[
+  <EditableSection title="Education" collectionKey="educations" errors={errors} onClearError={clearError} items={data.educations} setItems={(items) => setDataDirty({ ...data, educations: items })} fields={[
           { key: 'school', label: 'School' },
           { key: 'degree', label: 'Degree' },
           { key: 'field', label: 'Field' },
@@ -307,7 +397,7 @@ export default function Profile() {
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 
-        <EditableSection title="Freelance & Leadership Experience" collectionKey="leaderships" errors={errors} onClearError={clearError} items={data.leaderships} setItems={(items) => setData({ ...data, leaderships: items })} fields={[
+  <EditableSection title="Freelance & Leadership Experience" collectionKey="leaderships" errors={errors} onClearError={clearError} items={data.leaderships} setItems={(items) => setDataDirty({ ...data, leaderships: items })} fields={[
           { key: 'organization', label: 'Organization' },
           { key: 'title', label: 'Title' },
           { key: 'startDate', label: 'Start Date' },
@@ -315,7 +405,7 @@ export default function Profile() {
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 
-        <EditableSection title="Core Technical Skills" collectionKey="skills" errors={errors} onClearError={clearError} items={data.skills} setItems={(items) => setData({ ...data, skills: items })} fields={[
+  <EditableSection title="Core Technical Skills" collectionKey="skills" errors={errors} onClearError={clearError} items={data.skills} setItems={(items) => setDataDirty({ ...data, skills: items })} fields={[
           { key: 'description', label: 'Description', textarea: true }
         ]} />
 

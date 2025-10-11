@@ -52,18 +52,24 @@ export default function MyProfile() {
     return parts.map(p => p.trim()).filter(Boolean);
   };
 
-  // Determine if a specific profile id was requested
+  // Determine if a specific profile id or slug was requested
   const requestedId = useMemo(() => {
     const idStr = params.id;
     const id = idStr ? Number(idStr) : undefined;
     return id && !Number.isNaN(id) ? id : undefined;
   }, [params.id]);
+  const requestedSlug = useMemo(() => {
+    const s = (params as any)?.slug as string | undefined;
+    return s ? String(s).trim().toLowerCase() : undefined;
+  }, [params]);
 
   // fetch helper so we can reuse on events
   async function refetchProfile() {
     try {
       let url = '';
-      if (requestedId) {
+      if (requestedSlug) {
+        url = `/profile/slug/${encodeURIComponent(requestedSlug)}`;
+      } else if (requestedId) {
         url = `/profile/${requestedId}`;
       } else {
         const token = localStorage.getItem('token');
@@ -117,7 +123,7 @@ export default function MyProfile() {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('auth-changed', onAuthChanged as EventListener);
     };
-  }, [requestedId]);
+  }, [requestedId, requestedSlug]);
 
   // Close contact modal on Escape
   useEffect(() => {
@@ -179,21 +185,23 @@ export default function MyProfile() {
     }
   }
 
-  // If no :id provided, try to navigate to the correct canonical id to avoid mismatches
+  // If no :id or :slug provided, navigate to the canonical slug route when available; else fall back to numeric id
   useEffect(() => {
     (async () => {
-      if (requestedId) return;
+      if (requestedId || requestedSlug) return;
       try {
         // Prefer own profile when logged in, otherwise public
         const token = localStorage.getItem('token');
         const res = await api.get(token ? '/profile/me' : '/profile/public');
         const prof = res.data?.profile;
-        if (prof?.id) {
+        if (prof?.slug) {
+          navigate(`/p/${prof.slug}`, { replace: true });
+        } else if (prof?.id) {
           navigate(`/myprofile/${prof.id}`, { replace: true });
         }
       } catch {}
     })();
-  }, [requestedId, navigate]);
+  }, [requestedId, requestedSlug, navigate]);
 
   if (loading) return <div className="text-center py-5">Loading profile...</div>;
   if (!profile) return <div className="alert alert-warning">No profile data available.</div>;

@@ -1,4 +1,4 @@
-import { Link, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api } from './shared/api';
 import Login from './pages/Login';
@@ -6,8 +6,10 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import MyProfile from './pages/MyProfile';
+// PublicProfileBySlug is no longer needed; /p/:slug will reuse the full MyProfile layout
 
 export default function App() {
+  const location = useLocation();
   // Theme management
   const [theme, setTheme] = useState<string>(() => {
     const t = localStorage.getItem('theme') || 'purple-light';
@@ -16,6 +18,10 @@ export default function App() {
   // Navbar brand data (from profile)
   const [brandName, setBrandName] = useState<string>('');
   const [brandTagline, setBrandTagline] = useState<string>('');
+  // Navbar save state from Profile page
+  const [profileDirty, setProfileDirty] = useState<boolean>(false);
+  const [profileSaving, setProfileSaving] = useState<boolean>(false);
+  const onProfileRoute = location.pathname === '/profile';
 
   // Auth state (reactive)
   type AuthUser = { id: number; email: string; name?: string; role?: string } | null;
@@ -70,11 +76,27 @@ export default function App() {
     window.addEventListener('profile-updated', onProfileUpdated as EventListener);
     window.addEventListener('auth-changed', onAuthChanged as EventListener);
     window.addEventListener('storage', onStorage);
+    const onProfileDirty = (ev: Event) => {
+      try {
+        const d = (ev as CustomEvent)?.detail?.dirty;
+        setProfileDirty(Boolean(d));
+      } catch { /* noop */ }
+    };
+    const onProfileSaving = (ev: Event) => {
+      try {
+        const s = (ev as CustomEvent)?.detail?.saving;
+        setProfileSaving(Boolean(s));
+      } catch { /* noop */ }
+    };
+    window.addEventListener('profile-dirty', onProfileDirty as EventListener);
+    window.addEventListener('profile-saving', onProfileSaving as EventListener);
     return () => {
       cancelled = true;
       window.removeEventListener('profile-updated', onProfileUpdated as EventListener);
       window.removeEventListener('auth-changed', onAuthChanged as EventListener);
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('profile-dirty', onProfileDirty as EventListener);
+      window.removeEventListener('profile-saving', onProfileSaving as EventListener);
     };
   }, []);
 
@@ -105,7 +127,17 @@ export default function App() {
             const computedBrandName = (brandName || '').trim() || 'Profile';
             const computedTagline = (brandTagline || '').trim();
             return (
-              <Link className="navbar-brand brand-title" to="/" aria-label={`${computedBrandName} professional profile`}>
+              <Link
+                className="navbar-brand brand-title"
+                to="/"
+                aria-label={`${computedBrandName} professional profile`}
+                onClick={(e) => {
+                  if (onProfileRoute && profileDirty) {
+                    const ok = confirm('You have unsaved changes. Leave this page?');
+                    if (!ok) e.preventDefault();
+                  }
+                }}
+              >
                 <span className="brand-name">{computedBrandName}</span>
                 {computedTagline && <span className="brand-sep" aria-hidden>•</span>}
                 {computedTagline && (
@@ -118,6 +150,19 @@ export default function App() {
             );
           })()}
             <div className="navbar-nav ms-auto align-items-center gap-2">
+            {onProfileRoute && profileDirty && (
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={profileSaving}
+                onClick={() => {
+                  // Ask Profile page to save
+                  window.dispatchEvent(new Event('profile-save'));
+                }}
+                title={profileSaving ? 'Saving…' : 'Save profile'}
+              >
+                {profileSaving ? 'Saving…' : 'Save Profile'}
+              </button>
+            )}
             {/* My Profile link removed per request; use dropdown item instead */}
             {Boolean(auth.token) ? (
               <AccountNavChip email={auth.user?.email || ''} />
@@ -136,6 +181,7 @@ export default function App() {
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/myprofile" element={<MyProfile />} />
           <Route path="/myprofile/:id" element={<MyProfile />} />
+          <Route path="/p/:slug" element={<MyProfile />} />
           <Route path="/" element={<Navigate to="/myprofile" replace />} />
         </Routes>
       </div>
@@ -195,9 +241,14 @@ function ThemeSwitcher({ value, onChange }: { value: string; onChange: (v: strin
 
 function AccountNavChip({ email }: { email: string }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [profileId, setProfileId] = useState<number | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
+  const [profileDirty, setProfileDirty] = useState<boolean>(false);
   function logout() {
+    const proceed = !profileDirty || confirm('You have unsaved changes. Logout anyway?');
+    if (!proceed) return;
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.dispatchEvent(new Event('auth-changed'));
@@ -219,26 +270,34 @@ function AccountNavChip({ email }: { email: string }) {
         const prof = res?.data?.profile || {};
         const id = prof?.id;
         const photoUrl = prof?.photoUrl ? String(prof.photoUrl) : '';
+        const s = prof?.slug ? String(prof.slug) : '';
         if (!cancelled) {
           setProfileId(typeof id === 'number' ? id : null);
           setAvatar(photoUrl || null);
+          setSlug(s || null);
         }
       } catch {
         if (!cancelled) {
           setProfileId(null);
           setAvatar(null);
+          setSlug(null);
         }
       }
     }
     load();
     const onAuthChanged = () => load();
     const onProfileUpdated = () => load();
+    const onProfileDirty = (ev: Event) => {
+      try { setProfileDirty(Boolean((ev as CustomEvent)?.detail?.dirty)); } catch {}
+    };
     window.addEventListener('auth-changed', onAuthChanged as EventListener);
     window.addEventListener('profile-updated', onProfileUpdated as EventListener);
+    window.addEventListener('profile-dirty', onProfileDirty as EventListener);
     return () => {
       cancelled = true;
       window.removeEventListener('auth-changed', onAuthChanged as EventListener);
       window.removeEventListener('profile-updated', onProfileUpdated as EventListener);
+      window.removeEventListener('profile-dirty', onProfileDirty as EventListener);
     };
   }, []);
   return (
@@ -270,11 +329,34 @@ function AccountNavChip({ email }: { email: string }) {
       </button>
       <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="accountChipDropdown">
         <li>
-          <Link className="dropdown-item" to={profileId ? `/myprofile/${profileId}` : '/myprofile'}>View Public Profile</Link>
+          <Link
+            className="dropdown-item"
+            to={slug ? `/p/${slug}` : (profileId ? `/myprofile/${profileId}` : '/myprofile')}
+            onClick={(e) => {
+              if (location.pathname === '/profile' && profileDirty) {
+                const ok = confirm('You have unsaved changes. Navigate away and lose changes?');
+                if (!ok) e.preventDefault();
+              }
+            }}
+          >
+            View Public Profile
+          </Link>
         </li>
         <li><hr className="dropdown-divider" /></li>
         <li>
-          <Link className="dropdown-item" to="/profile">Edit Profile</Link>
+          <Link
+            className="dropdown-item d-flex align-items-center justify-content-between"
+            to="/profile"
+            onClick={(e) => {
+              if (profileDirty) {
+                const ok = confirm('You have unsaved changes. Navigate to Edit Profile and potentially lose changes?');
+                if (!ok) { e.preventDefault(); }
+              }
+            }}
+          >
+            <span>Edit Profile</span>
+            {profileDirty && <span className="badge-accent" title="Unsaved changes">●</span>}
+          </Link>
         </li>
         <li><hr className="dropdown-divider" /></li>
         <li>

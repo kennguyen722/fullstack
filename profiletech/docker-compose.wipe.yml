@@ -1,0 +1,6 @@
+services:
+  server:
+    environment:
+      - WIPE_DB=true
+    # Alternatively, you can invoke the entrypoint with an argument:
+    # command: ["./docker-entrypoint.sh", "wipe-db"]
