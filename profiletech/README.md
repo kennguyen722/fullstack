@@ -1,5 +1,19 @@
 # ProfileTech
 
+ProfileTech is a focused, full‑stack portfolio and résumé application for technical professionals. It helps you present a polished, up‑to‑date professional profile — including your headline, summary, experience, education, and core technical skills — in a clean, modern UI that hiring managers can browse quickly. Use it to share a single, canonical profile link on applications, with recruiters, or on social media, and let interested viewers contact you directly.
+
+Why ProfileTech:
+- Purpose‑built for job seekers and hiring teams: fast to read, easy to maintain.
+- Admin‑only editing with secure authentication; public viewing by default for easy sharing.
+- Themeable, responsive, and production‑ready with a simple data model and Dockerized deployment.
+
+At a glance, ProfileTech gives professionals a professional‑grade place to showcase:
+- Professional Summary (headline and overview)
+- Work Experience (roles, companies, dates, highlights)
+- Education
+- Core Technical Skills
+- Contact options (including a “Contact me” modal that can deliver emails via SMTP)
+
 Full-stack professional profile app built with:
 
 - Backend: Node.js, Express, TypeScript, Prisma (SQLite), Zod, JWT, Multer
