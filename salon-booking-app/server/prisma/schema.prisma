@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("EMPLOYEE")
+  employee  Employee?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id           Int           @id @default(autoincrement())
+  userId       Int           @unique
+  user         User          @relation(fields: [userId], references: [id])
+  firstName    String
+  lastName     String
+  phone        String?
+  bio          String?
+  photoUrl     String?
+  skills       EmployeeSkill[]
+  shifts       Shift[]
+  appointments Appointment[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model ServiceCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  desc      String?
+  services  Service[]
+}
+
+model Service {
+  id           Int               @id @default(autoincrement())
+  name         String
+  description  String?
+  priceCents   Int               @default(0)
+  durationMin  Int               @default(30)
+  categoryId   Int
+  category     ServiceCategory   @relation(fields: [categoryId], references: [id])
+  employees    EmployeeSkill[]
+  appointments Appointment[]
+  @@unique([name, categoryId])
+}
+
+model EmployeeSkill {
+  employeeId Int
+  serviceId  Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+  @@id([employeeId, serviceId])
+}
+
+model Shift {
+  id          Int       @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  start       DateTime
+  end         DateTime
+}
+
+model Appointment {
+  id            Int       @id @default(autoincrement())
+  serviceId     Int
+  employeeId    Int
+  employee      Employee  @relation(fields: [employeeId], references: [id])
+  service       Service   @relation(fields: [serviceId], references: [id])
+  clientName    String
+  clientEmail   String?
+  clientPhone   String?
+  clientBirthday DateTime?
+  notes         String?
+  start         DateTime
+  end           DateTime
+  status        String    @default("CONFIRMED")
+  createdAt     DateTime  @default(now())
+}
+
+

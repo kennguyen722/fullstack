@@ -17,10 +17,17 @@ bin-release/
 node_modules/
 spa-booking-app/client/node_modules/*
 spa-booking-app/server/node_modules/*
+salon-booking-app/client/node_modules/
+salon-booking-app/server/node_modules/
 
 # distribution
 spa-booking-app/client/dist/*
 spa-booking-app/server/dist/*
+salon-booking-app/client/dist/
+salon-booking-app/server/dist/
+
+# Generic build outputs (covers all sub-packages)
+dist/
 
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important

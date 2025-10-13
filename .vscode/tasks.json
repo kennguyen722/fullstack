@@ -1,0 +1,245 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build salon client",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoLogo",
+				"-NoProfile",
+				"-Command",
+				"cd d:\\GitHub_Src\\fullstack\\salon-booking-app\\client; if (Test-Path pnpm-lock.yaml) { npx pnpm -s build } elseif (Test-Path package-lock.json) { npm run -s build } else { npm run -s build }"
+			],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}
