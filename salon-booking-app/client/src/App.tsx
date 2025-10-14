@@ -13,19 +13,23 @@ import Login from './pages/Login';
 import Logout from './pages/Logout';
 import { getMe, logout, useAuth } from './shared/auth';
 import { ThemeProvider } from './shared/ThemeContext';
+import { ConfigProvider, useConfig } from './shared/ConfigContext';
 import './theme.css';
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <ConfigProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </ConfigProvider>
   );
 }
 
 function AppContent() {
   const [collapsed, setCollapsed] = useState(true);
   const { user, setUser } = useAuth();
+  const { config } = useConfig();
   const nav = useNavigate();
   const [showAccountHint, setShowAccountHint] = useState(false);
   
@@ -66,12 +70,12 @@ function AppContent() {
   // Public mode - only show booking page
   if (isPublicMode) {
     return (
-      <div className="min-vh-100">
+      <div className="min-vh-100 booking-page">
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary topbar">
           <div className="container">
             <span className="navbar-brand fw-semibold">
-              <i className="bi bi-scissors me-2"></i>
-              Salon Booking
+              <i className="bi bi-calendar-check me-2"></i>
+              {config.appTitle}
             </span>
             <div className="navbar-nav ms-auto d-flex align-items-center gap-2">
               <a 
@@ -121,7 +125,10 @@ function AppContent() {
           >
             <i className={`bi ${collapsed ? 'bi-chevron-right' : 'bi-list'}`} />
           </button>
-          <span className="navbar-brand fw-semibold">Salon Booking</span>
+          <span className="navbar-brand fw-semibold">
+            <i className="bi bi-calendar-check me-2"></i>
+            {config.appTitle}
+          </span>
           <div className="ms-auto d-flex align-items-center gap-3">
             {user?.role === 'ADMIN' && (
               <NavLink className="btn btn-outline-light btn-sm" to="/booking">

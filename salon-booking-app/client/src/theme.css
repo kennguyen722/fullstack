@@ -445,6 +445,14 @@
   box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12), 0 2px 8px rgba(31, 27, 46, 0.08);
 }
 
+/* Purple Dark Theme: Alert Success */
+[data-theme="purple-dark"] .alert-success {
+  background: linear-gradient(135deg, #1a1444 0%, rgba(34, 197, 94, 0.15) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #10b981;
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.15), 0 2px 8px rgba(11, 10, 18, 0.2);
+}
+
 /* Purple • Glow Theme: Booking -> Choose Your Stylist card visuals */
 [data-theme="purple-dark"] .employee-card {
   background: linear-gradient(135deg, #141127 0%, rgba(139, 92, 246, 0.08) 100%);
@@ -3993,4 +4001,623 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--link-color);
   border-color: var(--link-color);
   color: white;
+}
+
+/* ===== LOGIN PAGE THEME BACKGROUNDS ===== */
+
+/* Default Light Theme */
+.login-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+    linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+}
+
+/* Light Purple Theme */
+[data-theme="light-purple"] .login-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 25% 75%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 75% 25%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+    linear-gradient(135deg, #fbfbff 0%, #f8f5ff 100%);
+}
+
+/* Dark Theme */
+[data-theme="dark"] .login-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.10) 0%, transparent 50%),
+    linear-gradient(135deg, #0d1117 0%, #0f172a 100%);
+}
+
+/* Purple Dark Theme */
+[data-theme="purple-dark"] .login-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 15% 85%, rgba(124, 58, 237, 0.20) 0%, transparent 60%),
+    radial-gradient(circle at 85% 15%, rgba(34, 211, 238, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.08) 0%, transparent 70%),
+    linear-gradient(135deg, #0b0a12 0%, #141127 50%, #191336 100%);
+}
+
+/* ===== BOOKING PAGE THEME BACKGROUNDS ===== */
+
+/* Default Light Theme */
+.booking-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+    linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+  min-height: 100vh;
+}
+
+/* Light Purple Theme */
+[data-theme="light-purple"] .booking-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 30% 30%, rgba(124, 58, 237, 0.10) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 50% 10%, rgba(130, 204, 221, 0.06) 0%, transparent 50%),
+    linear-gradient(135deg, #fbfbff 0%, #f8f5ff 100%);
+  min-height: 100vh;
+}
+
+/* Dark Theme */
+[data-theme="dark"] .booking-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.04) 0%, transparent 70%),
+    linear-gradient(135deg, #0d1117 0%, #0f172a 100%);
+  min-height: 100vh;
+}
+
+/* Purple Dark Theme */
+[data-theme="purple-dark"] .booking-page {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(34, 211, 238, 0.12) 0%, transparent 60%),
+    radial-gradient(circle at 10% 90%, rgba(167, 139, 250, 0.10) 0%, transparent 50%),
+    radial-gradient(circle at 90% 10%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+    linear-gradient(135deg, #0b0a12 0%, #141127 50%, #191336 100%);
+  min-height: 100vh;
+}
+
+/* ===== ADMIN BOOKING PAGE THEME BACKGROUNDS ===== */
+
+/* Default Light Theme - Admin Booking */
+.booking-page-admin {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
+    linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+  border-radius: 8px;
+  margin: 1rem;
+  padding: 2rem !important;
+}
+
+/* Light Purple Theme - Admin Booking */
+[data-theme="light-purple"] .booking-page-admin {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 35% 35%, rgba(124, 58, 237, 0.06) 0%, transparent 60%),
+    radial-gradient(circle at 65% 65%, rgba(168, 85, 247, 0.04) 0%, transparent 60%),
+    radial-gradient(circle at 50% 15%, rgba(130, 204, 221, 0.03) 0%, transparent 50%),
+    linear-gradient(135deg, #fbfbff 0%, #f8f5ff 100%);
+  border-radius: 8px;
+  margin: 1rem;
+  padding: 2rem !important;
+}
+
+/* Dark Theme - Admin Booking */
+[data-theme="dark"] .booking-page-admin {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(56, 189, 248, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.03) 0%, transparent 70%),
+    linear-gradient(135deg, #0d1117 0%, #0f172a 100%);
+  border-radius: 8px;
+  margin: 1rem;
+  padding: 2rem !important;
+}
+
+/* Purple Dark Theme - Admin Booking */
+[data-theme="purple-dark"] .booking-page-admin {
+  background: var(--body-bg);
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(124, 58, 237, 0.12) 0%, transparent 60%),
+    radial-gradient(circle at 75% 75%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 15% 85%, rgba(167, 139, 250, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 85% 15%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+    linear-gradient(135deg, #0b0a12 0%, #141127 50%, #191336 100%);
+  border-radius: 8px;
+  margin: 1rem;
+  padding: 2rem !important;
+}
+
+/* ===== BOOKING PAGE SCROLLABLE CONTAINERS ===== */
+
+/* Services Container - Scrollable when content exceeds height */
+.services-container {
+  max-height: 70vh;
+  min-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  margin-right: -0.5rem;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-height: 800px) {
+  .services-container {
+    max-height: 60vh;
+    min-height: 250px;
+  }
+}
+
+@media (max-height: 600px) {
+  .services-container {
+    max-height: 50vh;
+    min-height: 200px;
+  }
+}
+
+/* Custom scrollbar styling for services container */
+.services-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.services-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.services-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.services-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Theme-specific scrollbar styling */
+[data-theme="dark"] .services-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .services-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .services-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="purple-dark"] .services-container::-webkit-scrollbar-track {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+[data-theme="purple-dark"] .services-container::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.3);
+}
+
+[data-theme="purple-dark"] .services-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.5);
+}
+
+[data-theme="light-purple"] .services-container::-webkit-scrollbar-track {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light-purple"] .services-container::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+}
+
+[data-theme="light-purple"] .services-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
+}
+
+/* Smooth scrolling */
+.services-container {
+  scroll-behavior: smooth;
+}
+
+/* Employees Container - Scrollable when content exceeds height */
+.employees-container {
+  max-height: 70vh;
+  min-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  margin-right: -0.5rem;
+}
+
+/* Responsive adjustments for employees container */
+@media (max-height: 800px) {
+  .employees-container {
+    max-height: 60vh;
+    min-height: 250px;
+  }
+}
+
+@media (max-height: 600px) {
+  .employees-container {
+    max-height: 50vh;
+    min-height: 200px;
+  }
+}
+
+/* Custom scrollbar styling for employees container */
+.employees-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.employees-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.employees-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.employees-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Theme-specific scrollbar styling for employees container */
+[data-theme="dark"] .employees-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .employees-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .employees-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="purple-dark"] .employees-container::-webkit-scrollbar-track {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+[data-theme="purple-dark"] .employees-container::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.3);
+}
+
+[data-theme="purple-dark"] .employees-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.5);
+}
+
+[data-theme="light-purple"] .employees-container::-webkit-scrollbar-track {
+  background: rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light-purple"] .employees-container::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+}
+
+[data-theme="light-purple"] .employees-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
+}
+
+/* Smooth scrolling for employees container */
+.employees-container {
+  scroll-behavior: smooth;
+}
+
+/* Scrollable container visual indicators */
+.services-container::after,
+.employees-container::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, var(--body-bg, rgba(255, 255, 255, 0.8)));
+  pointer-events: none;
+  z-index: 1;
+  margin-top: -20px;
+}
+
+/* Theme-specific fade indicators */
+[data-theme="dark"] .services-container::after,
+[data-theme="dark"] .employees-container::after {
+  background: linear-gradient(transparent, rgba(13, 17, 23, 0.8));
+}
+
+[data-theme="purple-dark"] .services-container::after,
+[data-theme="purple-dark"] .employees-container::after {
+  background: linear-gradient(transparent, rgba(11, 10, 18, 0.8));
+}
+
+[data-theme="light-purple"] .services-container::after,
+[data-theme="light-purple"] .employees-container::after {
+  background: linear-gradient(transparent, rgba(251, 251, 255, 0.8));
+}
+
+/* ===== BOOKING PAGE VISIBILITY IMPROVEMENTS ===== */
+
+/* Ensure booking cards have proper spacing and visibility */
+.booking-page .card,
+.booking-page-admin .card {
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Improve card header visibility */
+.booking-page .card-header,
+.booking-page-admin .card-header {
+  background: var(--surface-bg, #f8f9fa);
+  border-bottom: 1px solid var(--surface-border, #dee2e6);
+  padding: 1rem 1.25rem;
+}
+
+/* Ensure proper spacing for booking steps */
+.booking-page .w-40,
+.booking-page-admin .w-40 {
+  width: 40px;
+  height: 40px;
+}
+
+/* Improve service and employee card visibility */
+.booking-page .service-card,
+.booking-page .employee-card,
+.booking-page-admin .service-card,
+.booking-page-admin .employee-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.booking-page .service-card:hover,
+.booking-page .employee-card:hover,
+.booking-page-admin .service-card:hover,
+.booking-page-admin .employee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure proper spacing for time slots */
+.booking-page .btn-outline-primary,
+.booking-page-admin .btn-outline-primary {
+  margin: 0.25rem;
+  min-width: 80px;
+}
+
+/* Improve form visibility */
+.booking-page .form-control,
+.booking-page .form-select,
+.booking-page-admin .form-control,
+.booking-page-admin .form-select {
+  border: 1px solid var(--surface-border, #ced4da);
+  padding: 0.75rem 1rem;
+}
+
+.booking-page .form-control:focus,
+.booking-page .form-select:focus,
+.booking-page-admin .form-control:focus,
+.booking-page-admin .form-select:focus {
+  border-color: var(--primary-color, #0d6efd);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Ensure alerts are visible */
+.booking-page .alert,
+.booking-page-admin .alert {
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 768px) {
+  .booking-page .container,
+  .booking-page-admin .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .booking-page .services-container,
+  .booking-page .employees-container,
+  .booking-page-admin .services-container,
+  .booking-page-admin .employees-container {
+    max-height: 50vh;
+    min-height: 200px;
+  }
+  
+  .booking-page .w-40,
+  .booking-page-admin .w-40 {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* Progress steps connector */
+.steps-connector {
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: var(--surface-border, #dee2e6);
+  z-index: 1;
+}
+
+/* Ensure progress steps are visible */
+.booking-page .steps-connector,
+.booking-page-admin .steps-connector {
+  background: var(--surface-border, #dee2e6);
+}
+
+/* Improve step visibility */
+.booking-page .w-40,
+.booking-page-admin .w-40 {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Ensure proper z-index for step elements */
+.booking-page .z-2,
+.booking-page-admin .z-2 {
+  z-index: 2;
+}
+
+.booking-page .z-1,
+.booking-page-admin .z-1 {
+  z-index: 1;
+}
+
+/* ===== BROWSER BODY SCROLLBAR THEMING ===== */
+
+/* Default Light Theme - Body Scrollbar */
+body::-webkit-scrollbar {
+  width: 12px;
+}
+
+body::-webkit-scrollbar-track {
+  background: var(--body-bg, #fafbfc);
+  border-radius: 6px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.6) 0%, rgba(139, 92, 246, 0.6) 100%);
+  border-radius: 6px;
+  border: 2px solid var(--body-bg, #fafbfc);
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.8) 0%, rgba(139, 92, 246, 0.8) 100%);
+}
+
+body::-webkit-scrollbar-corner {
+  background: var(--body-bg, #fafbfc);
+}
+
+/* Light Purple Theme - Body Scrollbar */
+[data-theme="light-purple"] body::-webkit-scrollbar-track {
+  background: var(--body-bg, #fbfbff);
+}
+
+[data-theme="light-purple"] body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
+  border: 2px solid var(--body-bg, #fbfbff);
+}
+
+[data-theme="light-purple"] body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.8) 0%, rgba(168, 85, 247, 0.8) 100%);
+}
+
+[data-theme="light-purple"] body::-webkit-scrollbar-corner {
+  background: var(--body-bg, #fbfbff);
+}
+
+/* Dark Theme - Body Scrollbar */
+[data-theme="dark"] body::-webkit-scrollbar-track {
+  background: var(--body-bg, #0d1117);
+}
+
+[data-theme="dark"] body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.6) 0%, rgba(56, 189, 248, 0.6) 100%);
+  border: 2px solid var(--body-bg, #0d1117);
+}
+
+[data-theme="dark"] body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.8) 0%, rgba(56, 189, 248, 0.8) 100%);
+}
+
+[data-theme="dark"] body::-webkit-scrollbar-corner {
+  background: var(--body-bg, #0d1117);
+}
+
+/* Purple Dark Theme - Body Scrollbar */
+[data-theme="purple-dark"] body::-webkit-scrollbar-track {
+  background: var(--body-bg, #0b0a12);
+}
+
+[data-theme="purple-dark"] body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.7) 0%, rgba(34, 211, 238, 0.6) 100%);
+  border: 2px solid var(--body-bg, #0b0a12);
+}
+
+[data-theme="purple-dark"] body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.9) 0%, rgba(34, 211, 238, 0.8) 100%);
+}
+
+[data-theme="purple-dark"] body::-webkit-scrollbar-corner {
+  background: var(--body-bg, #0b0a12);
+}
+
+/* Firefox scrollbar styling */
+@-moz-document url-prefix() {
+  body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.6) var(--body-bg, #fafbfc);
+  }
+  
+  [data-theme="light-purple"] body {
+    scrollbar-color: rgba(124, 58, 237, 0.6) var(--body-bg, #fbfbff);
+  }
+  
+  [data-theme="dark"] body {
+    scrollbar-color: rgba(14, 165, 233, 0.6) var(--body-bg, #0d1117);
+  }
+  
+  [data-theme="purple-dark"] body {
+    scrollbar-color: rgba(124, 58, 237, 0.7) var(--body-bg, #0b0a12);
+  }
+}
+
+/* Smooth scrolling for body */
+body {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced scrollbar styling for better visibility */
+body::-webkit-scrollbar {
+  transition: all 0.3s ease;
+}
+
+body::-webkit-scrollbar-thumb {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Theme-specific scrollbar shadows */
+[data-theme="dark"] body::-webkit-scrollbar-thumb {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] body::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="purple-dark"] body::-webkit-scrollbar-thumb {
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+}
+
+[data-theme="purple-dark"] body::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 4px 8px rgba(124, 58, 237, 0.3);
+}
+
+[data-theme="light-purple"] body::-webkit-scrollbar-thumb {
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light-purple"] body::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 4px 8px rgba(124, 58, 237, 0.2);
 }

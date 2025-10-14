@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../shared/api';
+import { useLocation } from 'react-router-dom';
 
 interface Employee {
   id: number;
@@ -34,6 +35,7 @@ interface ServiceCategory {
 }
 
 export default function Booking() {
+  const location = useLocation();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | ''>('');
@@ -53,6 +55,9 @@ export default function Booking() {
   const [step, setStep] = useState(1);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check if we're in admin booking mode (has sidebar/navigation)
+  const isAdminBooking = location.pathname === '/booking' && !location.pathname.startsWith('/public');
 
   useEffect(() => {
     loadEmployees();
@@ -189,28 +194,29 @@ export default function Booking() {
     : categories.flatMap(cat => cat.services);
 
   return (
-    <div className="container py-4">
+    <div className={`container py-4 ${isAdminBooking ? 'booking-page-admin' : ''}`}>
       <div className="row justify-content-center">
-        <div className="col-lg-8">
-          <div className="text-center mb-4">
+        <div className="col-lg-10 col-xl-8">
+          <div className="text-center mb-5">
             <h1 className="display-4 mb-3">Book Your Appointment</h1>
             <p className="lead text-muted">Experience professional beauty services with our skilled team</p>
           </div>
 
           {/* Progress Steps */}
-          <div className="row mb-4">
+          <div className="row mb-5">
             <div className="col-12">
               <div className="d-flex justify-content-between position-relative">
                 {[1, 2, 3, 4].map((stepNum) => (
                   <div key={stepNum} className="d-flex flex-column align-items-center">
                     <div 
                       className={`rounded-circle d-flex align-items-center justify-content-center ${
-                        step >= stepNum ? 'bg-primary text-white' : 'bg-light text-muted'
+                        step >= stepNum ? 'bg-primary text-white' : 'bg-light text-muted border'
                       } w-40 h-40 z-2`}
+                      style={{ minWidth: '40px', minHeight: '40px' }}
                     >
                       {stepNum}
                     </div>
-                    <small className="mt-1 text-center">
+                    <small className="mt-2 text-center fw-medium">
                       {stepNum === 1 && 'Service'}
                       {stepNum === 2 && 'Staff'}
                       {stepNum === 3 && 'Date & Time'}
@@ -251,26 +257,28 @@ export default function Booking() {
                   </select>
                 </div>
                 
-                <div className="row">
-                  {filteredServices.map(service => (
-                    <div key={service.id} className="col-md-6 mb-3">
-                      <div 
-                        className="card h-100 service-card cursor-pointer"
-                        onClick={() => handleServiceSelect(service)}
-                      >
-                        <div className="card-body">
-                          <h6 className="card-title">{service.name}</h6>
-                          {service.description && (
-                            <p className="card-text text-muted small">{service.description}</p>
-                          )}
-                          <div className="d-flex justify-content-between align-items-center">
-                            <span className="fw-bold text-primary">${(service.priceCents / 100).toFixed(2)}</span>
-                            <span className="text-muted small">{service.durationMin} min</span>
+                <div className="services-container">
+                  <div className="row">
+                    {filteredServices.map(service => (
+                      <div key={service.id} className="col-md-6 mb-3">
+                        <div 
+                          className="card h-100 service-card cursor-pointer"
+                          onClick={() => handleServiceSelect(service)}
+                        >
+                          <div className="card-body">
+                            <h6 className="card-title">{service.name}</h6>
+                            {service.description && (
+                              <p className="card-text text-muted small">{service.description}</p>
+                            )}
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="fw-bold text-primary">${(service.priceCents / 100).toFixed(2)}</span>
+                              <span className="text-muted small">{service.durationMin} min</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -289,42 +297,44 @@ export default function Booking() {
                   <strong>{selectedService?.name}</strong> - ${((selectedService?.priceCents || 0) / 100).toFixed(2)} ({selectedService?.durationMin} min)
                 </div>
                 
-                <div className="row">
-                  {availableEmployees.length > 0 ? (
-                    availableEmployees.map(employee => (
-                      <div key={employee.id} className="col-md-6 mb-3">
-                        <div 
-                          className="card h-100 employee-card cursor-pointer"
-                          onClick={() => handleEmployeeSelect(employee)}
-                        >
-                          <div className="card-body text-center">
-                            {employee.photoUrl ? (
-                              <img 
-                                src={employee.photoUrl} 
-                                alt={`${employee.firstName} ${employee.lastName}`}
-                                className="rounded-circle mb-3 avatar-80"
-                              />
-                            ) : (
-                              <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white mx-auto mb-3 avatar-80-circle">
-                                <span className="h4 mb-0">{employee.firstName.charAt(0)}{employee.lastName.charAt(0)}</span>
-                              </div>
-                            )}
-                            <h6 className="card-title">{employee.firstName} {employee.lastName}</h6>
-                            {employee.bio && (
-                              <p className="card-text text-muted small">{employee.bio}</p>
-                            )}
+                <div className="employees-container">
+                  <div className="row">
+                    {availableEmployees.length > 0 ? (
+                      availableEmployees.map(employee => (
+                        <div key={employee.id} className="col-md-6 mb-3">
+                          <div 
+                            className="card h-100 employee-card cursor-pointer"
+                            onClick={() => handleEmployeeSelect(employee)}
+                          >
+                            <div className="card-body text-center">
+                              {employee.photoUrl ? (
+                                <img 
+                                  src={employee.photoUrl} 
+                                  alt={`${employee.firstName} ${employee.lastName}`}
+                                  className="rounded-circle mb-3 avatar-80"
+                                />
+                              ) : (
+                                <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white mx-auto mb-3 avatar-80-circle">
+                                  <span className="h4 mb-0">{employee.firstName.charAt(0)}{employee.lastName.charAt(0)}</span>
+                                </div>
+                              )}
+                              <h6 className="card-title">{employee.firstName} {employee.lastName}</h6>
+                              {employee.bio && (
+                                <p className="card-text text-muted small">{employee.bio}</p>
+                              )}
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="col-12">
+                        <div className="alert alert-warning text-center">
+                          <h5>No stylists available for this service</h5>
+                          <p>Please try selecting a different service or contact us directly.</p>
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-12">
-                      <div className="alert alert-warning text-center">
-                        <h5>No stylists available for this service</h5>
-                        <p>Please try selecting a different service or contact us directly.</p>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

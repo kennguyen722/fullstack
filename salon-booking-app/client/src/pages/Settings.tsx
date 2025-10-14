@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../shared/auth';
 import { ThemeSelect } from '../shared/ThemeToggle';
+import { useConfig } from '../shared/ConfigContext';
 
 export default function Settings() {
   const { user } = useAuth();
+  const { config, updateConfig } = useConfig();
   const [activeTab, setActiveTab] = useState('salon');
   const [salonSettings, setSalonSettings] = useState({
-    businessName: 'Beauty Salon',
-    address: '123 Main Street, City, State 12345',
-    phone: '(555) 123-4567',
-    email: 'contact@beautysalon.com',
-    website: 'https://beautysalon.com',
+    appTitle: config.appTitle,
+    businessName: config.businessName,
+    address: config.address,
+    phone: config.phone,
+    email: config.email,
+    website: config.website,
     openingHours: {
       monday: { open: '09:00', close: '18:00', closed: false },
       tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -21,6 +24,19 @@ export default function Settings() {
       sunday: { open: '10:00', close: '16:00', closed: true }
     }
   });
+
+  // Update local state when config changes
+  useEffect(() => {
+    setSalonSettings(prev => ({
+      ...prev,
+      appTitle: config.appTitle,
+      businessName: config.businessName,
+      address: config.address,
+      phone: config.phone,
+      email: config.email,
+      website: config.website
+    }));
+  }, [config]);
   const [bookingSettings, setBookingSettings] = useState({
     allowOnlineBooking: true,
     requireClientEmail: false,
@@ -43,7 +59,15 @@ export default function Settings() {
 
   function handleSalonSettingsSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // In a real app, this would save to the backend
+    // Update the global configuration
+    updateConfig({
+      appTitle: salonSettings.appTitle,
+      businessName: salonSettings.businessName,
+      address: salonSettings.address,
+      phone: salonSettings.phone,
+      email: salonSettings.email,
+      website: salonSettings.website
+    });
     setMessage('Salon settings saved successfully!');
     setTimeout(() => setMessage(''), 3000);
   }
@@ -151,6 +175,36 @@ export default function Settings() {
           {/* Salon Information Tab */}
           {activeTab === 'salon' && (
             <form onSubmit={handleSalonSettingsSubmit}>
+              <h5 className="mb-3">Application Settings</h5>
+              
+              <div className="row mb-4">
+                <div className="col-md-12">
+                  <label className="form-label">
+                    <i className="bi bi-tag me-2"></i>
+                    Application Title
+                  </label>
+                  <input 
+                    type="text"
+                    className="form-control"
+                    value={salonSettings.appTitle}
+                    onChange={(e) => setSalonSettings({...salonSettings, appTitle: e.target.value})}
+                    placeholder="Enter application title"
+                    required
+                  />
+                  <div className="form-text">
+                    This title will appear in the navigation bar and browser tab
+                  </div>
+                  {salonSettings.appTitle !== config.appTitle && (
+                    <div className="mt-2 p-2 bg-light rounded border">
+                      <small className="text-muted">
+                        <i className="bi bi-eye me-1"></i>
+                        Preview: <strong>{salonSettings.appTitle}</strong>
+                      </small>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <h5 className="mb-3">Business Information</h5>
               
               <div className="row mb-3">
