@@ -8,8 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "prisma": "prisma",
+    "prisma:generate:business": "prisma generate --schema prisma/business.prisma",
     "seed": "ts-node --transpile-only src/seed.ts",
-    "postinstall": "prisma generate"
+  "postinstall": "prisma generate && npm run prisma:generate:business"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
