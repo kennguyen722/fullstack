@@ -757,6 +757,25 @@
 .avatar-80 { width: 80px; height: 80px; object-fit: cover; }
 .avatar-80-circle { width: 80px; height: 80px; }
 
+/* App title + tagline (theme-aware) */
+.app-title-box {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.app-title {
+  font-size: 1.05rem;
+  color: var(--bs-body-color);
+  display: inline-flex;
+  align-items: center;
+}
+.app-tagline {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
 /* Sticky subheader utility (keeps bars like filters under the page header) */
 .sticky-subheader {
   position: sticky;

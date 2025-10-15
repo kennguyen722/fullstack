@@ -12,15 +12,35 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("EMPLOYEE")
+  businessId Int? 
+  business   Business? @relation(fields: [businessId], references: [id])
   employee  Employee?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Business {
+  id        Int      @id @default(autoincrement())
+  name      String
+  domain    String?  @unique
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  users     User[]
+  employees Employee[]
+  serviceCategories ServiceCategory[]
+  services  Service[]
+  shifts    Shift[]
+  appointments Appointment[]
 }
 
 model Employee {
   id           Int           @id @default(autoincrement())
   userId       Int           @unique
   user         User          @relation(fields: [userId], references: [id])
+  businessId   Int?
+  business     Business?     @relation(fields: [businessId], references: [id])
   firstName    String
   lastName     String
   phone        String?
@@ -37,6 +57,8 @@ model ServiceCategory {
   id        Int       @id @default(autoincrement())
   name      String    @unique
   desc      String?
+  businessId Int?
+  business   Business? @relation(fields: [businessId], references: [id])
   services  Service[]
 }
 
@@ -48,6 +70,8 @@ model Service {
   durationMin  Int               @default(30)
   categoryId   Int
   category     ServiceCategory   @relation(fields: [categoryId], references: [id])
+  businessId   Int?
+  business     Business?         @relation(fields: [businessId], references: [id])
   employees    EmployeeSkill[]
   appointments Appointment[]
   @@unique([name, categoryId])
@@ -65,6 +89,8 @@ model Shift {
   id          Int       @id @default(autoincrement())
   employeeId  Int
   employee    Employee  @relation(fields: [employeeId], references: [id])
+  businessId  Int?
+  business    Business? @relation(fields: [businessId], references: [id])
   start       DateTime
   end         DateTime
 }
@@ -75,6 +101,8 @@ model Appointment {
   employeeId    Int
   employee      Employee  @relation(fields: [employeeId], references: [id])
   service       Service   @relation(fields: [serviceId], references: [id])
+  businessId    Int?
+  business      Business? @relation(fields: [businessId], references: [id])
   clientName    String
   clientEmail   String?
   clientPhone   String?

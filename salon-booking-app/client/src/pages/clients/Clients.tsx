@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '../shared/api';
-import { useAuth } from '../shared/auth';
+import { api } from '../../shared/api';
+import { useAuth } from '../../shared/auth';
 
 type Appt = {
   id: number;

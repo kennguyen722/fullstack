@@ -47,11 +47,11 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 // Types
-type Role = 'ADMIN' | 'EMPLOYEE';
+type Role = 'SUPER' | 'ADMIN' | 'EMPLOYEE';
 type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELED';
 
 // Auth helpers
-type JWTPayload = { id: number; role: Role };
+type JWTPayload = { id: number; role: Role; businessId?: number };
 function signToken(payload: JWTPayload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
@@ -80,7 +80,9 @@ function auth(required: boolean = true, roles?: Role[]) {
 
 // Schemas
 const registerSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
-const loginSchema = registerSchema;
+// Login should accept either an email or a username/login string (e.g. 'superadmin')
+// Login accepts multiple shapes: { email, password } or { login, password } or { username, password }
+const loginSchema = z.object({ password: z.string().min(6) }).catchall(z.any());
 
 const serviceCategorySchema = z.object({ name: z.string().min(2), desc: z.string().optional() });
 const serviceSchema = z.object({
@@ -101,6 +103,15 @@ const employeeSchema = z.object({
   password: z.string().min(6).optional().or(z.literal('')),
   role: z.enum(['ADMIN', 'EMPLOYEE']).optional(),
   serviceIds: z.array(z.number().int().positive()).optional(),
+});
+
+const businessCreateSchema = z.object({
+  name: z.string().min(2),
+  domain: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email(),
+  adminPassword: z.string().min(6).optional(),
 });
 
 const shiftSchema = z.object({ employeeId: z.number().int().positive(), start: z.string(), end: z.string() });
@@ -127,19 +138,32 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
   if (existing) return res.status(409).json({ error: 'Email already registered' });
   const hash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({ data: { email, password: hash, role: 'EMPLOYEE' } });
-  const token = signToken({ id: user.id, role: user.role as Role });
+  const token = signToken({ id: user.id, role: user.role as Role, businessId: user.businessId ?? undefined });
   res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
 
 app.post('/api/auth/login', async (req: Request, res: Response) => {
-  const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-  const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
+  // Support multiple request shapes for compatibility
+  const body = req.body as any || {};
+  const password: string | undefined = body.password;
+  const emailOrLogin: string | undefined = body.email || body.login || body.username;
+
+  if (!emailOrLogin || !password) return res.status(400).json({ error: 'Missing login or password' });
+
+  // Try exact email match first
+  let user = await prisma.user.findUnique({ where: { email: emailOrLogin } });
+
+  // If not found, try matching by email local part (e.g. 'alice' -> 'alice@...')
+  if (!user) {
+    user = await prisma.user.findFirst({ where: { email: { startsWith: `${emailOrLogin}@` } } });
+  }
+
   if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  const token = signToken({ id: user.id, role: user.role as Role });
+
+  const token = signToken({ id: user.id, role: user.role as Role, businessId: user.businessId ?? undefined });
   res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
 
@@ -185,13 +209,20 @@ app.delete('/api/services/:id', auth(true, ['ADMIN']), async (req: Request, res:
 
 // Employees
 app.get('/api/employees', auth(true, ['ADMIN']), async (_req: Request, res: Response) => {
-  const employees = await prisma.employee.findMany({ include: { user: true, skills: { include: { service: true } } } });
+  // If SUPER, return all; otherwise scope to user's business
+  const reqUser = (_req as any).user as JWTPayload | undefined;
+  const where: any = {};
+  if (reqUser && reqUser.role !== 'SUPER') where.user = { businessId: reqUser.businessId };
+  const employees = await prisma.employee.findMany({ where, include: { user: true, skills: { include: { service: true } } } });
   res.json(employees);
 });
 
 // Team employees (for Employee role - minimal fields)
 app.get('/api/team/employees', auth(true), async (_req: Request & { user?: JWTPayload }, res: Response) => {
-  const employees = await prisma.employee.findMany({ select: { id: true, firstName: true, lastName: true, photoUrl: true } });
+  const reqUser = (_req as any).user as JWTPayload | undefined;
+  const where: any = {};
+  if (reqUser && reqUser.role !== 'SUPER') where.user = { businessId: reqUser.businessId };
+  const employees = await prisma.employee.findMany({ where, select: { id: true, firstName: true, lastName: true, photoUrl: true } });
   res.json(employees);
 });
 
@@ -231,6 +262,36 @@ app.post('/api/employees', auth(true, ['ADMIN']), async (req: Request, res: Resp
   } catch (error) {
     console.error('Error creating employee:', error);
     res.status(500).json({ error: 'Failed to create employee' });
+  }
+});
+
+// Businesses (SUPER only)
+app.get('/api/businesses', auth(true, ['SUPER']), async (_req: Request, res: Response) => {
+  const businesses = await prisma.business.findMany({ include: { users: true } });
+  res.json(businesses);
+});
+
+app.post('/api/businesses', auth(true, ['SUPER']), async (req: Request, res: Response) => {
+  const parsed = businessCreateSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const { name, domain, address, phone, email, adminPassword } = parsed.data;
+  // Check domain/email uniqueness
+  const existingByDomain = domain ? await prisma.business.findUnique({ where: { domain } }) : null;
+  if (existingByDomain) return res.status(409).json({ error: 'Domain already exists' });
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) return res.status(409).json({ error: 'Admin email already exists' });
+
+  const pw = adminPassword && adminPassword.trim() !== '' ? adminPassword : 'Welcome123!';
+  const hash = await bcrypt.hash(pw, 10);
+
+  try {
+    const business = await prisma.business.create({ data: { name, domain, address, phone, email } });
+    const user = await prisma.user.create({ data: { email, password: hash, role: 'ADMIN', businessId: business.id } });
+    await prisma.employee.create({ data: { userId: user.id, firstName: 'Admin', lastName: 'Owner' } });
+    res.json({ business, admin: { id: user.id, email: user.email } });
+  } catch (err) {
+    console.error('Failed to create business:', err);
+    res.status(500).json({ error: 'Failed to create business' });
   }
 });
 
@@ -304,6 +365,10 @@ app.get('/api/shifts', auth(true, ['ADMIN']), async (req: Request, res: Response
     where.end = { gt: startQ };
   } else if (endQ) {
     where.start = { lt: endQ };
+  }
+  const reqUser = (req as any).user as JWTPayload | undefined;
+  if (reqUser && reqUser.role !== 'SUPER') {
+    where.employee = { user: { businessId: reqUser.businessId } };
   }
   const shifts = await prisma.shift.findMany({ where, include: { employee: true } });
   res.json(shifts);
@@ -423,12 +488,22 @@ app.get('/api/appointments/my', auth(true), async (req: Request & { user?: JWTPa
 
 // Team appointments (read-only view for Employee)
 app.get('/api/appointments/team', auth(true), async (_req: Request & { user?: JWTPayload }, res: Response) => {
-  const appts = await prisma.appointment.findMany({ include: { service: true, employee: true } });
+  const reqUser = (_req as any).user as JWTPayload | undefined;
+  const where: any = {};
+  if (reqUser && reqUser.role !== 'SUPER') {
+    where.employee = { user: { businessId: reqUser.businessId } };
+  }
+  const appts = await prisma.appointment.findMany({ where, include: { service: true, employee: true } });
   res.json(appts);
 });
 
 app.get('/api/appointments', auth(true, ['ADMIN']), async (_req: Request, res: Response) => {
-  const appts = await prisma.appointment.findMany({ include: { service: true, employee: true } });
+  const reqUser = (_req as any).user as JWTPayload | undefined;
+  const where: any = {};
+  if (reqUser && reqUser.role !== 'SUPER') {
+    where.employee = { user: { businessId: reqUser.businessId } };
+  }
+  const appts = await prisma.appointment.findMany({ where, include: { service: true, employee: true } });
   res.json(appts);
 });
 
@@ -454,6 +529,14 @@ app.post('/api/appointments', auth(true), async (req: Request & { user?: JWTPayl
       const me = await prisma.employee.findUnique({ where: { userId: req.user!.id } });
       if (!me) return res.status(400).json({ error: 'Employee profile not found' });
       employeeId = me.id;
+    }
+
+    // Enforce that the employee belongs to the same business for non-SUPER users
+    if (req.user!.role !== 'SUPER') {
+      const emp = await prisma.employee.findUnique({ where: { id: employeeId } });
+      if (!emp) return res.status(400).json({ error: 'Employee not found' });
+      const empUser = await prisma.user.findUnique({ where: { id: emp.userId } });
+      if (!empUser || empUser.businessId !== req.user!.businessId) return res.status(403).json({ error: 'Forbidden' });
     }
 
     // Compute end from service duration
@@ -598,7 +681,14 @@ app.post('/api/book', async (req: Request, res: Response) => {
 
 // Public employees with services (for booking UI)
 app.get('/api/public/employees', async (_req: Request, res: Response) => {
+  // Optional: scope by businessId query param
+  const qBiz = _req.query.businessId ? Number(_req.query.businessId) : undefined;
+  const where: any = {};
+  if (qBiz) {
+    where.user = { businessId: qBiz };
+  }
   const employees = await prisma.employee.findMany({
+    where,
     include: { skills: { include: { service: true } } },
   });
   res.json(employees);
@@ -737,6 +827,15 @@ async function ensureSeed() {
     const hash = await bcrypt.hash(password, 10);
     const admin = await prisma.user.create({ data: { email, password: hash, role: 'ADMIN' } });
     await prisma.employee.create({ data: { userId: admin.id, firstName: 'Admin', lastName: 'User' } });
+  }
+
+  // Seed SUPER admin if env variables provided
+  const superEmail = process.env.SUPERADMIN_LOGIN || process.env.SUPERADMIN_EMAIL || 'super@salon.local';
+  const superPw = process.env.SUPERADMIN_PASSWORD || 'SuperAdmin123!';
+  const existingSuper = await prisma.user.findUnique({ where: { email: superEmail } });
+  if (!existingSuper) {
+    const hashS = await bcrypt.hash(superPw, 10);
+    await prisma.user.create({ data: { email: superEmail, password: hashS, role: 'SUPER' } });
   }
 
   // Ensure system category and some block services exist

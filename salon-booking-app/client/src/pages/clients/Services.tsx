@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../shared/api';
+import { api } from '../../shared/api';
 
 interface Service {
   id: number;

@@ -35,7 +35,7 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
     
     // Default configuration
     return {
-      appTitle: 'Salon Booking',
+      appTitle: 'Bizzoll Salon Booking',
       businessName: 'Beauty Salon',
       address: '123 Main Street, City, State 12345',
       phone: '(555) 123-4567',

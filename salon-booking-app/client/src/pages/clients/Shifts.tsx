@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '../shared/api';
+import { api } from '../../shared/api';
 
 interface Shift {
   id: number;

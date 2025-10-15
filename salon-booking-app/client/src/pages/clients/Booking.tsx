@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { api } from '../shared/api';
+import { api } from '../../shared/api';
 import { useLocation } from 'react-router-dom';
 
 interface Employee {

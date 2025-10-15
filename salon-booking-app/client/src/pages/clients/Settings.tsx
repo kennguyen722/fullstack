@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../shared/auth';
-import { ThemeSelect } from '../shared/ThemeToggle';
-import { useConfig } from '../shared/ConfigContext';
+import { useAuth } from '../../shared/auth';
+import { ThemeSelect } from '../../shared/ThemeToggle';
+import { useConfig } from '../../shared/ConfigContext';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -61,7 +61,6 @@ export default function Settings() {
     e.preventDefault();
     // Update the global configuration
     updateConfig({
-      appTitle: salonSettings.appTitle,
       businessName: salonSettings.businessName,
       address: salonSettings.address,
       phone: salonSettings.phone,
@@ -181,27 +180,24 @@ export default function Settings() {
                 <div className="col-md-12">
                   <label className="form-label">
                     <i className="bi bi-tag me-2"></i>
-                    Application Title
+                    Application Title (managed by Config)
                   </label>
                   <input 
                     type="text"
                     className="form-control"
                     value={salonSettings.appTitle}
-                    onChange={(e) => setSalonSettings({...salonSettings, appTitle: e.target.value})}
-                    placeholder="Enter application title"
-                    required
+                    placeholder="Application title managed by ConfigContext"
+                    disabled
                   />
                   <div className="form-text">
-                    This title will appear in the navigation bar and browser tab
+                    The application title is controlled by the centralized configuration and cannot be edited from this form.
                   </div>
-                  {salonSettings.appTitle !== config.appTitle && (
-                    <div className="mt-2 p-2 bg-light rounded border">
-                      <small className="text-muted">
-                        <i className="bi bi-eye me-1"></i>
-                        Preview: <strong>{salonSettings.appTitle}</strong>
-                      </small>
-                    </div>
-                  )}
+                  <div className="mt-2 p-2 bg-light rounded border">
+                    <small className="text-muted">
+                      <i className="bi bi-eye me-1"></i>
+                      Current: <strong>{salonSettings.appTitle}</strong>
+                    </small>
+                  </div>
                 </div>
               </div>
 

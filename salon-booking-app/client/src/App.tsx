@@ -1,14 +1,15 @@
 import { NavLink, Route, Routes, useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import Dashboard from './pages/Dashboard';
-import Employees from './pages/Employees';
-import Services from './pages/Services';
-import Shifts from './pages/Shifts';
-import Appointments from './pages/Appointments';
-import MyAvailability from './pages/MyAvailability';
-import Clients from './pages/Clients';
-import Settings from './pages/Settings';
-import Booking from './pages/Booking';
+import Dashboard from './pages/clients/Dashboard';
+import Employees from './pages/clients/Employees';
+import Services from './pages/clients/Services';
+import Shifts from './pages/clients/Shifts';
+import Appointments from './pages/clients/Appointments';
+import MyAvailability from './pages/clients/MyAvailability';
+import Clients from './pages/clients/Clients';
+import Settings from './pages/clients/Settings';
+import ApplicationManager from './pages/manager/ApplicationManager';
+import Booking from './pages/clients/Booking';
 import Login from './pages/Login';
 import Logout from './pages/Logout';
 import { getMe, logout, useAuth } from './shared/auth';
@@ -29,7 +30,7 @@ export default function App() {
 function AppContent() {
   const [collapsed, setCollapsed] = useState(true);
   const { user, setUser } = useAuth();
-  const { config } = useConfig();
+  // we intentionally don't pull full config here; AppTitle will read the appTitle via hook
   const nav = useNavigate();
   const [showAccountHint, setShowAccountHint] = useState(false);
   
@@ -55,6 +56,20 @@ function AppContent() {
     }
   }, [user, isPublicMode]);
 
+  // Theme-aware title + tagline component that reads the app title from ConfigContext
+  function AppTitle() {
+    const { config } = useConfig();
+    return (
+      <div className="app-title-box">
+        <span className="app-title">
+          <i className="bi bi-calendar-check me-2" aria-hidden="true" />
+          {config.appTitle}
+        </span>
+        <span className="app-tagline">Centralized booking & business insights for modern salons</span>
+      </div>
+    );
+  }
+
   const handleLogout = () => {
     logout();
     setUser(null);
@@ -67,6 +82,11 @@ function AppContent() {
     return children;
   }
 
+  function RequireSuper({ children }: { children: JSX.Element }) {
+    if ((user as any)?.role !== 'SUPER') return <Navigate to="/appointments" replace />;
+    return children;
+  }
+
   // Public mode - only show booking page
   if (isPublicMode) {
     return (
@@ -74,8 +94,7 @@ function AppContent() {
         <nav className="navbar navbar-expand-lg navbar-dark bg-primary topbar">
           <div className="container">
             <span className="navbar-brand fw-semibold">
-              <i className="bi bi-calendar-check me-2"></i>
-              {config.appTitle}
+              <AppTitle />
             </span>
             <div className="navbar-nav ms-auto d-flex align-items-center gap-2">
               <a 
@@ -126,8 +145,7 @@ function AppContent() {
             <i className={`bi ${collapsed ? 'bi-chevron-right' : 'bi-list'}`} />
           </button>
           <span className="navbar-brand fw-semibold">
-            <i className="bi bi-calendar-check me-2"></i>
-            {config.appTitle}
+            <AppTitle />
           </span>
           <div className="ms-auto d-flex align-items-center gap-3">
             {user?.role === 'ADMIN' && (
@@ -151,6 +169,13 @@ function AppContent() {
                 {user.email}
               </button>
               <ul className="dropdown-menu dropdown-menu-end">
+                    {(user as any)?.role === 'SUPER' && (
+                      <li>
+                        <NavLink to="/app-manager" className="dropdown-item">
+                          <i className="bi bi-diagram-3 me-2" /> Application Manager
+                        </NavLink>
+                      </li>
+                    )}
                 {user?.role === 'ADMIN' && (
                   <>
                     <li>
@@ -262,6 +287,7 @@ function AppContent() {
             <Route path="/clients" element={<RequireAdmin><Clients /></RequireAdmin>} />
             <Route path="/availability" element={user?.role === 'EMPLOYEE' ? <MyAvailability /> : <Navigate to="/appointments" replace />} />
             <Route path="/settings" element={<RequireAdmin><Settings /></RequireAdmin>} />
+            <Route path="/app-manager" element={<RequireSuper><ApplicationManager /></RequireSuper>} />
             <Route path="/booking" element={<Booking />} />
             <Route path="/logout" element={<Logout />} />
           </Routes>
