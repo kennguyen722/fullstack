@@ -6,6 +6,11 @@ export const api = axios.create({ baseURL: `${API_URL}/api` });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) config.headers = { ...config.headers, Authorization: `Bearer ${token}` };
+  if (token) {
+    // AxiosRequestHeaders is a plain object-like type; ensure we merge into it safely
+    const headers = (config.headers || {}) as Record<string, string>;
+    headers.Authorization = `Bearer ${token}`;
+    config.headers = headers as any;
+  }
   return config;
 });

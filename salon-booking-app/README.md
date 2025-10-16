@@ -52,7 +52,7 @@ salon-booking-app/
 	- Example:
 		```
 		PORT=4301
-		DATABASE_URL="file:./dev.db"
+		DATABASE_URL="file:./salonBookingApp.db"
 		JWT_SECRET="your_secret_key"
 		CLIENT_URL="http://localhost:5301"
 		CORS_ORIGINS="http://localhost:5301"

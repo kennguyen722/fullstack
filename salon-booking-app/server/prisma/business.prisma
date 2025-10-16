@@ -1,0 +1,21 @@
+generator client_business {
+  provider = "prisma-client-js"
+  output   = "./generated/business-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Business-only schema: keep Business and minimal related identifiers here so teams
+// can generate a focused Prisma Client for platform-level admin tooling.
+model Business {
+  id        Int      @id @default(autoincrement())
+  name      String
+  domain    String?  @unique
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+}

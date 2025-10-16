@@ -1,0 +1,20 @@
+# systemd unit template for running the Node server (Linux)
+# Copy to /etc/systemd/system/salon-booking-server.service and update ExecStart and environment variables
+
+[Unit]
+Description=Salon Booking API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/salon-booking-app/release/server
+Environment=DATABASE_URL="postgresql://user:pass@db:5432/salon"
+Environment=PORT=4301
+ExecStart=/usr/bin/node /var/www/salon-booking-app/release/server/dist/index.js
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

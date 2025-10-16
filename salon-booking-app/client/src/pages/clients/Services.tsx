@@ -164,7 +164,7 @@ export default function Services() {
                   <th>Description</th>
                   <th>Duration</th>
                   <th>Price</th>
-                  <th width="120"></th>
+                  <th style={{ width: 120 }}></th>
                 </tr>
               </thead>
               <tbody>

@@ -6,11 +6,17 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
+import type { User } from '@prisma/client';
+// Import the generated business-only client (created by prisma/business.prisma)
+// Import the generated business-only Prisma client. Point directly at the client's entry file
+// to avoid ESM directory-import issues.
+import { PrismaClient as BusinessPrismaClient } from '../prisma/generated/business-client/index.js';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 
 const prisma = new PrismaClient();
+const businessPrisma = new BusinessPrismaClient();
 const app = express();
 const PORT = Number(process.env.PORT || 4301);
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5301';
@@ -144,9 +150,9 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   // Support multiple request shapes for compatibility
-  const body = req.body as any || {};
-  const password: string | undefined = body.password;
-  const emailOrLogin: string | undefined = body.email || body.login || body.username;
+  const body = req.body as { password?: string; email?: string; login?: string; username?: string } | undefined;
+  const password: string | undefined = body?.password;
+  const emailOrLogin: string | undefined = body?.email || body?.login || body?.username;
 
   if (!emailOrLogin || !password) return res.status(400).json({ error: 'Missing login or password' });
 
@@ -210,7 +216,7 @@ app.delete('/api/services/:id', auth(true, ['ADMIN']), async (req: Request, res:
 // Employees
 app.get('/api/employees', auth(true, ['ADMIN']), async (_req: Request, res: Response) => {
   // If SUPER, return all; otherwise scope to user's business
-  const reqUser = (_req as any).user as JWTPayload | undefined;
+  const reqUser = (_req as Request & { user?: JWTPayload }).user as JWTPayload | undefined;
   const where: any = {};
   if (reqUser && reqUser.role !== 'SUPER') where.user = { businessId: reqUser.businessId };
   const employees = await prisma.employee.findMany({ where, include: { user: true, skills: { include: { service: true } } } });
@@ -219,7 +225,7 @@ app.get('/api/employees', auth(true, ['ADMIN']), async (_req: Request, res: Resp
 
 // Team employees (for Employee role - minimal fields)
 app.get('/api/team/employees', auth(true), async (_req: Request & { user?: JWTPayload }, res: Response) => {
-  const reqUser = (_req as any).user as JWTPayload | undefined;
+  const reqUser = (_req as Request & { user?: JWTPayload }).user as JWTPayload | undefined;
   const where: any = {};
   if (reqUser && reqUser.role !== 'SUPER') where.user = { businessId: reqUser.businessId };
   const employees = await prisma.employee.findMany({ where, select: { id: true, firstName: true, lastName: true, photoUrl: true } });
@@ -267,16 +273,29 @@ app.post('/api/employees', auth(true, ['ADMIN']), async (req: Request, res: Resp
 
 // Businesses (SUPER only)
 app.get('/api/businesses', auth(true, ['SUPER']), async (_req: Request, res: Response) => {
-  const businesses = await prisma.business.findMany({ include: { users: true } });
-  res.json(businesses);
+  // Use the business-specific client for platform-level listing
+  const businesses = await businessPrisma.business.findMany();
+  // Load users from the main prisma client and attach them to each business
+  const businessIds = businesses.map((b) => b.id);
+  // Fetch users for these businesses using the main Prisma client.
+  const users = await prisma.user.findMany({ where: { businessId: { in: businessIds } } });
+  const usersByBiz: Record<number, User[]> = {};
+  for (const u of users) {
+    const bid = u.businessId as number | undefined;
+    if (!bid) continue;
+    usersByBiz[bid] = usersByBiz[bid] || [];
+    usersByBiz[bid].push(u);
+  }
+  const withUsers = businesses.map(b => ({ ...b, users: usersByBiz[b.id] || [] }));
+  res.json(withUsers);
 });
 
 app.post('/api/businesses', auth(true, ['SUPER']), async (req: Request, res: Response) => {
   const parsed = businessCreateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const { name, domain, address, phone, email, adminPassword } = parsed.data;
-  // Check domain/email uniqueness
-  const existingByDomain = domain ? await prisma.business.findUnique({ where: { domain } }) : null;
+  // Check domain uniqueness with business client
+  const existingByDomain = domain ? await businessPrisma.business.findUnique({ where: { domain } }) : null;
   if (existingByDomain) return res.status(409).json({ error: 'Domain already exists' });
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) return res.status(409).json({ error: 'Admin email already exists' });
@@ -285,8 +304,9 @@ app.post('/api/businesses', auth(true, ['SUPER']), async (req: Request, res: Res
   const hash = await bcrypt.hash(pw, 10);
 
   try {
-    const business = await prisma.business.create({ data: { name, domain, address, phone, email } });
-    const user = await prisma.user.create({ data: { email, password: hash, role: 'ADMIN', businessId: business.id } });
+    // Create business via businessPrisma, but still create the ADMIN user and employee via main prisma
+    const business = await businessPrisma.business.create({ data: { name, domain, address, phone, email } });
+  const user = await prisma.user.create({ data: { email, password: hash, role: 'ADMIN', businessId: business.id } });
     await prisma.employee.create({ data: { userId: user.id, firstName: 'Admin', lastName: 'Owner' } });
     res.json({ business, admin: { id: user.id, email: user.email } });
   } catch (err) {
@@ -366,7 +386,7 @@ app.get('/api/shifts', auth(true, ['ADMIN']), async (req: Request, res: Response
   } else if (endQ) {
     where.start = { lt: endQ };
   }
-  const reqUser = (req as any).user as JWTPayload | undefined;
+  const reqUser = (req as Request & { user?: JWTPayload }).user as JWTPayload | undefined;
   if (reqUser && reqUser.role !== 'SUPER') {
     where.employee = { user: { businessId: reqUser.businessId } };
   }
@@ -536,7 +556,7 @@ app.post('/api/appointments', auth(true), async (req: Request & { user?: JWTPayl
       const emp = await prisma.employee.findUnique({ where: { id: employeeId } });
       if (!emp) return res.status(400).json({ error: 'Employee not found' });
       const empUser = await prisma.user.findUnique({ where: { id: emp.userId } });
-      if (!empUser || empUser.businessId !== req.user!.businessId) return res.status(403).json({ error: 'Forbidden' });
+    if (!empUser || empUser.businessId !== req.user!.businessId) return res.status(403).json({ error: 'Forbidden' });
     }
 
     // Compute end from service duration
