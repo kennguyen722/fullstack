@@ -17,16 +17,11 @@ export function ThemeToggle({ className = '', size = 'md' }: ThemeToggleProps) {
 
   const getIcon = () => {
     switch (theme) {
-      case 'light':
-        return 'bi-sun-fill';
-      case 'light-purple':
-        return 'bi-palette-fill';
       case 'purple-dark':
         return 'bi-stars';
       case 'dark':
-        return 'bi-moon-stars-fill';
       default:
-        return 'bi-sun-fill';
+        return 'bi-moon-stars-fill';
     }
   };
 
@@ -53,21 +48,21 @@ export function ThemeSelect({ className = '', showAsCards = false }: ThemeSelect
   if (showAsCards) {
     return (
       <div className={`theme-selection-cards ${className}`}>
-        <div className="row g-3">
+        <div className="theme-cards-wrapper d-flex flex-wrap align-items-stretch">
           {availableThemes.map((themeOption) => (
-            <div key={themeOption.value} className="col-md-4">
-              <div 
+            <div key={themeOption.value} className="theme-card-item">
+              <div
                 className={`card theme-card h-100 ${theme === themeOption.value ? 'selected' : ''}`}
                 onClick={() => setTheme(themeOption.value)}
               >
-                <div className="card-body text-center">
-                  <div className="theme-preview mb-3">
-                    <i className={`${themeOption.icon} fs-1`}></i>
+                <div className="card-body text-center p-2">
+                  <div className="theme-preview mb-2">
+                    <i className={`${themeOption.icon} fs-2`}></i>
                   </div>
-                  <h6 className="card-title">{themeOption.label}</h6>
-                  <p className="card-text small text-muted">{themeOption.description}</p>
+                  <h6 className="card-title mb-1">{themeOption.label}</h6>
+                  <p className="card-text small text-muted mb-1">{themeOption.description}</p>
                   {theme === themeOption.value && (
-                    <div className="mt-2">
+                    <div className="mt-1">
                       <span className="badge bg-primary">
                         <i className="bi bi-check-circle me-1"></i>
                         Active

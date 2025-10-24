@@ -8,7 +8,9 @@ import Appointments from './pages/clients/Appointments';
 import MyAvailability from './pages/clients/MyAvailability';
 import Clients from './pages/clients/Clients';
 import Settings from './pages/clients/Settings';
-import ApplicationManager from './pages/manager/ApplicationManager';
+import ManageBusiness from './pages/manager/ManageBusiness';
+import ApplicationSettings from './pages/manager/ApplicationSettings';
+import ViewBusiness from './pages/manager/ViewBusiness';
 import Booking from './pages/clients/Booking';
 import Login from './pages/Login';
 import Logout from './pages/Logout';
@@ -65,7 +67,7 @@ function AppContent() {
           <i className="bi bi-calendar-check me-2" aria-hidden="true" />
           {config.appTitle}
         </span>
-        <span className="app-tagline">Centralized booking & business insights for modern salons</span>
+        <span className="app-tagline">{config.tagline}</span>
       </div>
     );
   }
@@ -154,28 +156,25 @@ function AppContent() {
                 Admin Booking
               </NavLink>
             )}
-            <a 
-              href="/public" 
-              className="btn btn-outline-light btn-sm"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <i className="bi bi-globe me-1"></i>
-              Public View
-            </a>
+            {/* Hide Public View when SUPER is on the Manage Business page */}
+            {user?.role !== 'SUPER' && (
+              <a 
+                href="/public" 
+                className="btn btn-outline-light btn-sm"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i className="bi bi-globe me-1"></i>
+                Public View
+              </a>
+            )}
             <div className="dropdown" title="Account menu: Settings, Logout" aria-label="Account menu: Settings and Logout">
               <button className="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
                 <i className="bi bi-person-circle me-2" aria-hidden="true" />
                 {user.email}
               </button>
               <ul className="dropdown-menu dropdown-menu-end">
-                    {(user as any)?.role === 'SUPER' && (
-                      <li>
-                        <NavLink to="/app-manager" className="dropdown-item">
-                          <i className="bi bi-diagram-3 me-2" /> Application Manager
-                        </NavLink>
-                      </li>
-                    )}
+                        {/* Super users previously had Application Manager in the account dropdown; remove it and move to the sidebar */}
                 {user?.role === 'ADMIN' && (
                   <>
                     <li>
@@ -185,6 +184,13 @@ function AppContent() {
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                   </>
+                )}
+                {(user as any)?.role === 'SUPER' && (
+                  <li>
+                    <NavLink to="/app-settings" className="dropdown-item">
+                      <i className="bi bi-sliders me-2" /> Application Settings
+                    </NavLink>
+                  </li>
                 )}
                 <li>
                   <NavLink to="/logout" className="dropdown-item">
@@ -253,12 +259,15 @@ function AppContent() {
                 </NavLink>
               </li>
             )}
-            <li className="nav-item">
-              <NavLink to="/appointments" className="nav-link" data-tooltip="Appointments">
-                <i className="bi bi-journal-check"/>
-                <span className="nav-text">Appointments</span>
-              </NavLink>
-            </li>
+            {/* Appointments are available to ADMIN and EMPLOYEE only; hide for SUPER */}
+            {(user as any)?.role !== 'SUPER' && (
+              <li className="nav-item">
+                <NavLink to="/appointments" className="nav-link" data-tooltip="Appointments">
+                  <i className="bi bi-journal-check"/>
+                  <span className="nav-text">Appointments</span>
+                </NavLink>
+              </li>
+            )}
             {user?.role === 'ADMIN' && (
               <li className="nav-item">
                 <NavLink to="/clients" className="nav-link" data-tooltip="Clients">
@@ -275,11 +284,29 @@ function AppContent() {
                 </NavLink>
               </li>
             )}
+            {(user as any)?.role === 'SUPER' && (
+              <li className="nav-item">
+                <NavLink to="/manage-business" className="nav-link" data-tooltip="Manage Business">
+                  <i className="bi bi-diagram-3"/>
+                  <span className="nav-text">Manage Business</span>
+                </NavLink>
+              </li>
+            )}
+            {(user as any)?.role === 'SUPER' && (
+              <li className="nav-item">
+                <NavLink to="/view-business" className="nav-link" data-tooltip="View Businesses">
+                  <i className="bi bi-eye"/>
+                  <span className="nav-text">View Businesses</span>
+                </NavLink>
+              </li>
+            )}
           </ul>
         </aside>
         <main className="content p-4">
           <Routes>
-            <Route path="/" element={user?.role === 'ADMIN' ? <Dashboard /> : <Navigate to="/appointments" replace />} />
+            <Route path="/" element={
+              user?.role === 'ADMIN' ? <Dashboard /> : (user && (user as any).role === 'SUPER') ? <Navigate to="/manage-business" replace /> : <Navigate to="/appointments" replace />
+            } />
             <Route path="/employees" element={<RequireAdmin><Employees /></RequireAdmin>} />
             <Route path="/services" element={<RequireAdmin><Services /></RequireAdmin>} />
             <Route path="/shifts" element={<RequireAdmin><Shifts /></RequireAdmin>} />
@@ -287,7 +314,9 @@ function AppContent() {
             <Route path="/clients" element={<RequireAdmin><Clients /></RequireAdmin>} />
             <Route path="/availability" element={user?.role === 'EMPLOYEE' ? <MyAvailability /> : <Navigate to="/appointments" replace />} />
             <Route path="/settings" element={<RequireAdmin><Settings /></RequireAdmin>} />
-            <Route path="/app-manager" element={<RequireSuper><ApplicationManager /></RequireSuper>} />
+            <Route path="/manage-business" element={<RequireSuper><ManageBusiness /></RequireSuper>} />
+            <Route path="/app-settings" element={<RequireSuper><ApplicationSettings /></RequireSuper>} />
+            <Route path="/view-business" element={<RequireSuper><ViewBusiness /></RequireSuper>} />
             <Route path="/booking" element={<Booking />} />
             <Route path="/logout" element={<Logout />} />
           </Routes>

@@ -51,7 +51,7 @@ export default function Shifts() {
 
   // Weekly availability template (admin bulk)
   const [bulkWeeks, setBulkWeeks] = useState(4);
-  const [bulkStartDate, setBulkStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [bulkStartDate, setBulkStartDate] = useState(() => fmtDateYYYYMMDD(new Date()));
   const [weekTemplate, setWeekTemplate] = useState([
     { day: 1, startTime: '', endTime: '' }, // Mon
     { day: 2, startTime: '', endTime: '' }, // Tue
@@ -101,7 +101,7 @@ export default function Shifts() {
       setEditingShift(shift);
       const start = new Date(shift.start);
       const end = new Date(shift.end);
-      const date = start.toISOString().split('T')[0];
+  const date = fmtDateYYYYMMDD(start);
       const startTime = start.toTimeString().slice(0, 5);
       const endTime = end.toTimeString().slice(0, 5);
       
@@ -118,7 +118,7 @@ export default function Shifts() {
       
       setFormData({
         employeeId: employees[0]?.id || 0,
-        date: tomorrow.toISOString().split('T')[0],
+        date: fmtDateYYYYMMDD(tomorrow),
         startTime: '09:00',
         endTime: '18:00'
       });
@@ -266,7 +266,7 @@ export default function Shifts() {
       const date = new Date(shift.start);
       const startOfWeek = new Date(date);
       startOfWeek.setDate(date.getDate() - date.getDay());
-      const weekKey = startOfWeek.toISOString().split('T')[0];
+  const weekKey = fmtDateYYYYMMDD(startOfWeek);
       
       if (!groups[weekKey]) {
         groups[weekKey] = [];

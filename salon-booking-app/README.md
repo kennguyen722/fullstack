@@ -118,6 +118,28 @@ npm run dev
 - **Email:** admin@salon.local
 - **Password:** Admin123!
 
+## Quick One-liners (useful for CI / deploy)
+
+- Build both server and client (from repo root):
+
+```powershell
+npm --prefix ./server run build; if ($LASTEXITCODE -ne 0) { exit 1 }; npm --prefix ./client run build
+```
+
+- Build and start the production server (after running migrations):
+
+```powershell
+cd server; npm run build; node dist/index.js
+```
+
+## Important Environment Variables
+- `DATABASE_URL` — e.g. "file:./salonBookingApp.db" for SQLite in dev or a Postgres/MySQL URL for production.
+- `JWT_SECRET` — secret for signing auth tokens. Change this in production.
+- SMTP settings (optional, for sending admin reset emails):
+	- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` (true/false), `SMTP_FROM`.
+
+If SMTP is not configured, password reset links are logged to `password-reset-audit.log` and returned in server logs for local testing.
+
 ## Features & Capabilities
 
 - **Online Booking:** Public booking form for clients (service, staff, date/time, birthday, email, phone required)

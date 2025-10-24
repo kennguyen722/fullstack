@@ -5,14 +5,17 @@
   "type": "commonjs",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-  "build": "tsc -p tsconfig.json",
-  "type-check": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit -p tsconfig.json",
     "build:prod": "npm --prefix ../client run build && npx prisma generate && npx prisma generate --schema=prisma/business.prisma && npm run build",
     "start": "node dist/index.js",
+  "start:prod": "node dist/index.js",
+  "release": "npm --prefix ../client run build && npm run prisma:generate:business && npm run build",
+  "postbuild": "npx prisma generate && npx prisma generate --schema=prisma/business.prisma",
     "prisma": "prisma",
     "prisma:generate:business": "prisma generate --schema prisma/business.prisma",
     "seed": "ts-node --transpile-only src/seed.ts",
-  "postinstall": "prisma generate && npm run prisma:generate:business"
+    "postinstall": "prisma generate && npm run prisma:generate:business"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
@@ -23,6 +26,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
+    "nodemailer": "^6.9.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {

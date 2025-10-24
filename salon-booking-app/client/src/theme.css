@@ -84,74 +84,40 @@
 }
 
 /* Light Theme Overrides removed to restore default light theme look */
+/* Theme selection cards used in Application Settings */
+.theme-selection-cards { display:flex; gap:1rem; flex-wrap:wrap; }
+.theme-selection-cards .theme-card { width: 10rem; cursor: pointer; border: 1px solid var(--surface-border); border-radius: 8px; padding: .5rem; transition: box-shadow .15s ease, transform .12s ease, border-color .12s ease; background: var(--card-bg); color: var(--card-text); }
 
-/* Light • Purple Theme Colors */
-[data-theme="light-purple"] {
-  --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-  --secondary-gradient: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
-  --accent-gradient: linear-gradient(135deg, #22d3ee 0%, #38bdf8 100%);
-  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+/* Compact card layout used by Settings and ApplicationSettings */
+.theme-cards-wrapper { gap: .5rem; }
+.theme-card-item { flex: 0 0 11rem; }
+.theme-card-item .theme-card { width: 100%; }
+.theme-selection-cards .theme-card .theme-preview { height:64px; border-radius:6px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.06); }
+.theme-selection-cards .theme-card .theme-title { font-size: 0.9rem; font-weight:600; }
+.theme-selection-cards .theme-card .theme-desc { font-size: 0.8rem; color: var(--text-muted); }
+.theme-selection-cards .theme-card:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,0.06); }
+.theme-selection-cards .theme-card.selected { border-color: var(--input-focus-border); box-shadow: 0 8px 28px rgba(0,0,0,0.08); }
+.theme-selection-cards .theme-card input[type="radio"] { display:none; }
 
-  --body-bg: #fbfbff;
-  --body-color: #1f1b2e;
-  --surface-bg: #ffffff;
-  --surface-color: #1f1b2e;
-  --surface-border: rgba(31, 27, 46, 0.08);
-  --surface-shadow: rgba(31, 27, 46, 0.05);
+/* Theme preview swatches for selection cards */
+.theme-card.preview-dark .theme-preview { background: #1f2937; color: #fff; border: 1px solid rgba(255,255,255,0.06); }
+.theme-card.preview-purple-dark .theme-preview { background: #2a0b2e; color: #f3e8ff; border: 1px solid rgba(255,255,255,0.04); }
 
-  --text-primary: #1f1b2e;
-  --text-secondary: #433878;
-  --text-muted: #6b5ca5;
-  --text-light: #ffffff;
+/* Rich mini preview inside theme card */
+.theme-preview .theme-mini { width: 86%; height: 52px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 -8px 24px rgba(0,0,0,0.04); display:flex; flex-direction:column; }
+.theme-mini-header { height: 10px; background: rgba(255,255,255,0.18); border-bottom: 1px solid rgba(0,0,0,0.04); }
+.theme-mini-body { padding: 6px; display:flex; flex-direction:column; gap:4px; flex:1; }
+.theme-mini-line { height:6px; background: rgba(0,0,0,0.08); border-radius: 3px; width: 100%; }
+.theme-mini-line.short { width: 60%; }
+.theme-mini-footer { display:flex; justify-content:flex-end; padding:6px; }
+.theme-mini-button { width:36px; height:14px; border-radius:6px; background: rgba(0,0,0,0.12); }
 
-  --link-color: #7c3aed;
-  --link-hover-color: #6d28d9;
+/* Slightly larger hover state for modern feel */
+.theme-selection-cards .theme-card:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 14px 40px rgba(2,6,23,0.12); }
+.theme-selection-cards .theme-card.selected { border-width:2px; transform: translateY(-4px); box-shadow: 0 18px 48px rgba(2,6,23,0.14); }
 
-  --sidebar-bg: linear-gradient(180deg, #ffffff 0%, #f8f5ff 100%);
-  --sidebar-color: #433878;
-  --sidebar-hover-bg: rgba(124, 58, 237, 0.08);
-  --sidebar-active-bg: rgba(124, 58, 237, 0.12);
-  --sidebar-border: rgba(31, 27, 46, 0.08);
 
-  --topbar-bg: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
-  --topbar-color: #1f1b2e;
-  --topbar-shadow: rgba(31, 27, 46, 0.06);
-
-  --btn-primary-bg: var(--primary-gradient);
-  --btn-primary-color: #ffffff;
-  --btn-primary-shadow: rgba(124, 58, 237, 0.25);
-  --btn-secondary-bg: #f3f4f6;
-  --btn-secondary-color: #433878;
-  --btn-accent-bg: var(--accent-gradient);
-  --btn-accent-color: #ffffff;
-
-  --card-bg: #ffffff;
-  --card-shadow: rgba(31, 27, 46, 0.04);
-  --card-border: rgba(31, 27, 46, 0.08);
-  --card-text: #1f1b2e;
-
-  --input-bg: #ffffff;
-  --input-border: rgba(31, 27, 46, 0.12);
-  --input-focus-border: #7c3aed;
-  --input-color: #1f1b2e;
-  --input-placeholder: #8b79d1;
-  --input-focus-shadow: rgba(124, 58, 237, 0.15);
-
-  --alert-info-bg: rgba(129, 140, 248, 0.12);
-  --alert-info-border: rgba(129, 140, 248, 0.35);
-  --alert-info-color: #3730a3;
-  --alert-success-bg: rgba(16, 185, 129, 0.1);
-  --alert-success-border: rgba(16, 185, 129, 0.25);
-  --alert-success-color: #065f46;
-  --alert-warning-bg: rgba(245, 158, 11, 0.1);
-  --alert-warning-border: rgba(245, 158, 11, 0.25);
-  --alert-warning-color: #92400e;
-  --alert-danger-bg: rgba(239, 68, 68, 0.1);
-  --alert-danger-border: rgba(239, 68, 68, 0.25);
-  --alert-danger-color: #991b1b;
-  --nowline-color: #ea580c; /* orange accent better on purple */
-  --nowline-color: #f43f5e; /* pink/red vivid for dark */
-}
+/* removed light-purple theme variables (not used) */
 
 /* Dark Theme Colors - Professional Docker Desktop Style */
 [data-theme="dark"] {
@@ -391,32 +357,7 @@
   box-shadow: 0 8px 20px rgba(34, 197, 94, 0.18), 0 2px 8px rgba(1, 4, 9, 0.2);
 }
 
-/* Light Theme: Modern Alerts */
-[data-theme="light"] .alert {
-  border-radius: 10px;
-  border-width: 1px;
-}
-
-[data-theme="light"] .alert-info {
-  background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
-  border: 1px solid rgba(0, 123, 255, 0.35);
-  color: #0b3b8f;
-  box-shadow: 0 8px 20px rgba(0, 123, 255, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
-}
-
-[data-theme="light"] .alert-warning {
-  background: linear-gradient(135deg, #fff7e6 0%, #ffefcc 100%);
-  border: 1px solid rgba(245, 158, 11, 0.45);
-  color: #92400e;
-  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
-}
-
-[data-theme="light"] .alert-success {
-  background: linear-gradient(135deg, #eafaf1 0%, #dcfce7 100%);
-  border: 1px solid rgba(16, 185, 129, 0.45);
-  color: #065f46;
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12), 0 2px 8px rgba(15, 23, 42, 0.06);
-}
+/* removed light theme alert rules (not used) */
 
 /* Light • Purple Theme: Modern Alerts */
 [data-theme="light-purple"] .alert {
@@ -687,11 +628,11 @@
 .apt-calendar { overflow: hidden; }
 .apt-cal-header { border-bottom: 1px solid var(--surface-border); }
 .apt-time-col { width: 64px; height: 100%; }
-.apt-time-slot { height: calc(100% / 12); display: flex; align-items: flex-start; padding: 6px 4px; }
+.apt-time-slot { height: calc(100% / 14); display: flex; align-items: flex-start; padding: 6px 4px; }
 .apt-col-head { flex: 1 1 0; min-width: 200px; }
 .apt-cal-body { height: 80vh; display: flex; }
 .apt-col { flex: 1 1 0; min-width: 200px; }
-.apt-col-hour { height: calc(100% / 12); }
+.apt-col-hour { height: calc(100% / 14); }
 .apt-time-col .apt-time-slot:last-child, .apt-col .apt-col-hour:last-child { border-bottom: none; }
 .apt-event { position: absolute; left: 8px; right: 8px; border-radius: 6px; padding: 6px 8px; color: var(--text-light); cursor: default; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; box-sizing: border-box; line-height: 1.15; }
 .apt-event > .small { pointer-events: none; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
@@ -740,6 +681,21 @@
 
 /* Center content inside buttons */
 .btn-center { display: inline-flex; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
+.btn-min-120 { min-width: 120px; }
+.h-220 { height: 220px; }
+.min-h-38 { min-height: 38px; }
+.w-40 { width: 40px; }
+.h-40 { height: 40px; }
+.z-1 { z-index: 1; }
+.z-2 { z-index: 2; }
+.steps-connector { position: absolute; background-color: var(--bs-light); top: 20px; left: 40px; right: 40px; height: 2px; }
+.cursor-pointer { cursor: pointer; }
+.avatar-80 { width: 80px; height: 80px; object-fit: cover; }
+.avatar-80-circle { width: 80px; height: 80px; }
+
+/* Column width helpers to avoid inline styles in table headers */
+.col-users { width: 120px; }
+.col-actions { width: 140px; }
 /* Ensure consistent button width so text fits */
 .btn-min-120 { min-width: 120px; }
 
@@ -892,81 +848,42 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 .apt-svc-8 { background: rgba(251, 146, 60, 0.9); }
 .apt-svc-9 { background: rgba(20, 184, 166, 0.9); }
 
-/* Quarter-based top and height utilities for calendar (15-min increments across 12 hours => 48 units) */
+/* Hour-based top and height utilities for calendar (60-min increments across 14 hours => 14 units) */
 /* Position top as percentage of column height */
-/* Generate top-q-0..48 and h-q-1..48 manually selected ranges */
+/* Generate top-q-0..14 and h-q-1..14 for 60-minute slots between 07:00 and 21:00 */
 .top-q-0 { top: 0%; }
-.top-q-4 { top: 8.333%; }
-.top-q-8 { top: 16.666%; }
-.top-q-12 { top: 25%; }
-.top-q-16 { top: 33.333%; }
-.top-q-20 { top: 41.666%; }
-.top-q-24 { top: 50%; }
-.top-q-28 { top: 58.333%; }
-.top-q-32 { top: 66.666%; }
-.top-q-36 { top: 75%; }
-.top-q-40 { top: 83.333%; }
-.top-q-44 { top: 91.666%; }
-.top-q-48 { top: 100%; }
-/* Finer graduation (every quarter) */
-.top-q-1 { top: calc(100% * 1 / 48); }
-.top-q-2 { top: calc(100% * 2 / 48); }
-.top-q-3 { top: calc(100% * 3 / 48); }
-.top-q-5 { top: calc(100% * 5 / 48); }
-.top-q-6 { top: calc(100% * 6 / 48); }
-.top-q-7 { top: calc(100% * 7 / 48); }
-.top-q-9 { top: calc(100% * 9 / 48); }
-.top-q-10 { top: calc(100% * 10 / 48); }
-.top-q-11 { top: calc(100% * 11 / 48); }
-.top-q-13 { top: calc(100% * 13 / 48); }
-.top-q-14 { top: calc(100% * 14 / 48); }
-.top-q-15 { top: calc(100% * 15 / 48); }
-.top-q-17 { top: calc(100% * 17 / 48); }
-.top-q-18 { top: calc(100% * 18 / 48); }
-.top-q-19 { top: calc(100% * 19 / 48); }
-.top-q-21 { top: calc(100% * 21 / 48); }
-.top-q-22 { top: calc(100% * 22 / 48); }
-.top-q-23 { top: calc(100% * 23 / 48); }
-.top-q-25 { top: calc(100% * 25 / 48); }
-.top-q-26 { top: calc(100% * 26 / 48); }
-.top-q-27 { top: calc(100% * 27 / 48); }
-.top-q-29 { top: calc(100% * 29 / 48); }
-.top-q-30 { top: calc(100% * 30 / 48); }
-.top-q-31 { top: calc(100% * 31 / 48); }
-.top-q-33 { top: calc(100% * 33 / 48); }
-.top-q-34 { top: calc(100% * 34 / 48); }
-.top-q-35 { top: calc(100% * 35 / 48); }
-.top-q-37 { top: calc(100% * 37 / 48); }
-.top-q-38 { top: calc(100% * 38 / 48); }
-.top-q-39 { top: calc(100% * 39 / 48); }
-.top-q-41 { top: calc(100% * 41 / 48); }
-.top-q-42 { top: calc(100% * 42 / 48); }
-.top-q-43 { top: calc(100% * 43 / 48); }
-.top-q-45 { top: calc(100% * 45 / 48); }
-.top-q-46 { top: calc(100% * 46 / 48); }
-.top-q-47 { top: calc(100% * 47 / 48); }
+.top-q-14 { top: 100%; }
+/* finer graduations: 1..13 */
+/* top-q-N maps to calc(100% * N / 14) */
+.top-q-1 { top: calc(100% * 1 / 14); }
+.top-q-2 { top: calc(100% * 2 / 14); }
+.top-q-3 { top: calc(100% * 3 / 14); }
+.top-q-4 { top: calc(100% * 4 / 14); }
+.top-q-5 { top: calc(100% * 5 / 14); }
+.top-q-6 { top: calc(100% * 6 / 14); }
+.top-q-7 { top: calc(100% * 7 / 14); }
+.top-q-8 { top: calc(100% * 8 / 14); }
+.top-q-9 { top: calc(100% * 9 / 14); }
+.top-q-10 { top: calc(100% * 10 / 14); }
+.top-q-11 { top: calc(100% * 11 / 14); }
+.top-q-12 { top: calc(100% * 12 / 14); }
+.top-q-13 { top: calc(100% * 13 / 14); }
 
-/* Heights per quarter: strictly proportional to schedule to fit within hour blocks */
-.h-q-1 { height: calc(100% * 1 / 48); }
-.h-q-2 { height: calc(100% * 2 / 48); }
-.h-q-3 { height: calc(100% * 3 / 48); }
-.h-q-4 { height: calc(100% * 4 / 48); }
-.h-q-5 { height: calc(100% * 5 / 48); }
-.h-q-6 { height: calc(100% * 6 / 48); }
-.h-q-7 { height: calc(100% * 7 / 48); }
-.h-q-8 { height: calc(100% * 8 / 48); }
-.h-q-9 { height: calc(100% * 9 / 48); }
-.h-q-10 { height: calc(100% * 10 / 48); }
-.h-q-12 { height: calc(100% * 12 / 48); }
-.h-q-16 { height: calc(100% * 16 / 48); }
-.h-q-20 { height: calc(100% * 20 / 48); }
-.h-q-24 { height: calc(100% * 24 / 48); }
-.h-q-28 { height: calc(100% * 28 / 48); }
-.h-q-32 { height: calc(100% * 32 / 48); }
-.h-q-36 { height: calc(100% * 36 / 48); }
-.h-q-40 { height: calc(100% * 40 / 48); }
-.h-q-44 { height: calc(100% * 44 / 48); }
-.h-q-48 { height: calc(100% * 48 / 48); }
+/* Heights per hour: strictly proportional to schedule to fit within hour blocks */
+.h-q-1 { height: calc(100% * 1 / 14); }
+.h-q-2 { height: calc(100% * 2 / 14); }
+.h-q-3 { height: calc(100% * 3 / 14); }
+.h-q-4 { height: calc(100% * 4 / 14); }
+.h-q-5 { height: calc(100% * 5 / 14); }
+.h-q-6 { height: calc(100% * 6 / 14); }
+.h-q-7 { height: calc(100% * 7 / 14); }
+.h-q-8 { height: calc(100% * 8 / 14); }
+.h-q-9 { height: calc(100% * 9 / 14); }
+.h-q-10 { height: calc(100% * 10 / 14); }
+.h-q-11 { height: calc(100% * 11 / 14); }
+.h-q-12 { height: calc(100% * 12 / 14); }
+.h-q-13 { height: calc(100% * 13 / 14); }
+.h-q-14 { height: calc(100% * 14 / 14); }
 
 /* Tiny button */
 .btn.btn-xs { padding: 2px 6px; font-size: 12px; line-height: 1; }
@@ -1190,30 +1107,7 @@ body.no-select, body.no-select * { -webkit-user-select: none !important; user-se
 
 /* Professional Date Picker Styling for All Themes */
 
-/* Light Theme Date Picker */
-[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
-[data-theme="light-purple"] input[type="date"]::-webkit-calendar-picker-indicator {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23007bff' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5 0zM2 2a1 1 0 0 0-1 1v1h14V3a1 1 0 0 0-1-1H2zM1 5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V5H1z'/%3E%3C/svg%3E");
-  background-size: 16px 16px;
-  background-repeat: no-repeat;
-  background-position: center;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 4px;
-  transition: all 0.2s ease;
-  background-color: rgba(0, 123, 255, 0.1);
-  border: 1px solid rgba(0, 123, 255, 0.2);
-}
-
-[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
-[data-theme="light-purple"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  background-color: rgba(0, 123, 255, 0.2);
-  border-color: rgba(0, 123, 255, 0.4);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
-}
+/* Light theme date-picker rules removed (not used) */
 
 /* Dark Theme Date Picker */
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {

@@ -17,6 +17,14 @@ import path from 'path';
 
 const prisma = new PrismaClient();
 const businessPrisma = new BusinessPrismaClient();
+let nodemailer: any = null;
+try {
+  // require lazily so missing dependency doesn't crash dev-time unless used
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  nodemailer = require('nodemailer');
+} catch (e) {
+  nodemailer = null;
+}
 const app = express();
 const PORT = Number(process.env.PORT || 4301);
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5301';
@@ -313,6 +321,126 @@ app.post('/api/businesses', auth(true, ['SUPER']), async (req: Request, res: Res
     console.error('Failed to create business:', err);
     res.status(500).json({ error: 'Failed to create business' });
   }
+});
+
+// Application settings (SUPER only) - persisted to a JSON file for simplicity
+app.get('/api/settings', auth(true, ['SUPER']), async (_req: Request, res: Response) => {
+  // Try to read from Prisma AppSetting if available
+  try {
+    const rows = await prisma.appSetting.findMany();
+    if (rows && rows.length) {
+      const out: Record<string, any> = {};
+      for (const r of rows) out[r.key] = JSON.parse(r.value);
+      return res.json(out);
+    }
+  } catch (e) {
+    // If prisma model isn't available yet (no migration), fallback to file
+  }
+  const SETTINGS_FILE = path.resolve(process.cwd(), 'server-settings.json');
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
+      return res.json(JSON.parse(raw));
+    }
+  } catch (e) {
+    console.error('Failed to read settings file:', e);
+  }
+  res.json({});
+});
+
+app.post('/api/settings', auth(true, ['SUPER']), async (req: Request, res: Response) => {
+  const payload = req.body || {};
+  // Try to persist via Prisma AppSetting
+  try {
+    // Upsert each key
+    for (const key of Object.keys(payload)) {
+      const value = JSON.stringify(payload[key]);
+      const existing = await prisma.appSetting.findUnique({ where: { key } as any }).catch(() => null);
+      if (existing) {
+        await prisma.appSetting.update({ where: { key } as any, data: { value } });
+      } else {
+        await prisma.appSetting.create({ data: { key, value } });
+      }
+    }
+    return res.json({ ok: true });
+  } catch (e) {
+    // Fallback to file
+    const SETTINGS_FILE = path.resolve(process.cwd(), 'server-settings.json');
+    try {
+      fs.writeFileSync(SETTINGS_FILE, JSON.stringify(payload, null, 2), 'utf8');
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error('Failed to write settings:', err);
+      return res.status(500).json({ error: 'Failed to persist settings' });
+    }
+  }
+});
+
+// Admin password recovery / set actions (SUPER only)
+app.post('/api/businesses/:id/send-admin-reset', auth(true, ['SUPER']), async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const admin = await prisma.user.findFirst({ where: { businessId: id, role: 'ADMIN' } });
+  if (!admin) return res.status(404).json({ error: 'Admin user not found for business' });
+  // Create a short-lived token for password reset
+  const token = jwt.sign({ uid: admin.id, action: 'admin-reset' }, JWT_SECRET, { expiresIn: '1h' });
+  // In production, send email. For now, log the reset link (or use SMTP if configured)
+  const resetLink = `${CLIENT_URL}/admin-reset?token=${token}`;
+  let mailed = false;
+  let mailError: any = null;
+  try {
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpSecure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1';
+
+    if (nodemailer && smtpHost) {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort || 587,
+        secure: smtpSecure || false,
+        auth: smtpUser ? { user: smtpUser, pass: smtpPass } : undefined,
+      });
+
+      const from = process.env.SMTP_FROM || process.env.FROM_EMAIL || `no-reply@${process.env.SMTP_DOMAIN || 'salon.local'}`;
+      const info = await transporter.sendMail({
+        from,
+        to: admin.email,
+        subject: 'Admin password reset',
+        text: `Use this link to reset the admin password: ${resetLink}`,
+        html: `<p>Use this link to reset the admin password:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
+      });
+      mailed = true;
+      console.log('Password reset email sent:', info?.messageId || info);
+    } else {
+      console.log('SMTP not configured, falling back to logging reset link');
+    }
+  } catch (e) {
+    mailError = e;
+    console.error('Failed to send password reset email:', e);
+  }
+
+  // Always append audit with a record of the reset link and whether mail was attempted
+  try {
+    const auditFile = path.resolve(process.cwd(), 'password-reset-audit.log');
+    fs.appendFileSync(auditFile, `${new Date().toISOString()} ${admin.email} ${resetLink} mailed=${mailed} error=${mailError ? String(mailError) : ''}\n`);
+  } catch (e) {
+    // ignore
+  }
+
+  if (mailError) return res.status(500).json({ ok: false, error: 'Failed to send reset email', details: String(mailError) });
+  return res.json({ ok: true, mailed });
+});
+
+app.post('/api/businesses/:id/set-admin-password', auth(true, ['SUPER']), async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { password } = req.body || {};
+  if (!password || String(password).length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  const admin = await prisma.user.findFirst({ where: { businessId: id, role: 'ADMIN' } });
+  if (!admin) return res.status(404).json({ error: 'Admin user not found for business' });
+  const hash = await bcrypt.hash(String(password), 10);
+  await prisma.user.update({ where: { id: admin.id }, data: { password: hash } });
+  res.json({ ok: true });
 });
 
 app.put('/api/employees/:id', auth(true, ['ADMIN']), async (req: Request, res: Response) => {

@@ -361,7 +361,7 @@ export default function Booking() {
                       id="booking-date"
                       className="form-control"
                       value={selectedDate}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       title="Select appointment date"
                     />

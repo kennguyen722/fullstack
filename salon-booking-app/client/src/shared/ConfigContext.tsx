@@ -2,11 +2,13 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 interface AppConfig {
   appTitle: string;
+  tagline?: string;
   businessName: string;
   address: string;
   phone: string;
   email: string;
   website: string;
+  theme?: string;
 }
 
 interface ConfigContextType {
@@ -36,11 +38,14 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
     // Default configuration
     return {
       appTitle: 'Bizzoll Salon Booking',
+      tagline: 'Centralized booking & business insights for modern salons',
       businessName: 'Beauty Salon',
       address: '123 Main Street, City, State 12345',
       phone: '(555) 123-4567',
       email: 'contact@beautysalon.com',
       website: 'https://beautysalon.com'
+      ,
+      theme: 'light'
     };
   });
 
@@ -50,6 +55,12 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
     
     // Update document title
     document.title = config.appTitle;
+    // Apply theme attribute to root element so theme CSS picks it up
+    try {
+      document.documentElement.setAttribute('data-theme', config.theme || 'light');
+    } catch (e) {
+      // ignore in non-browser contexts
+    }
   }, [config]);
 
   const updateConfig = (newConfig: Partial<AppConfig>) => {

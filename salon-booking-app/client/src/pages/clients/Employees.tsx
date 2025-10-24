@@ -179,7 +179,7 @@ export default function Employees() {
               <th>Phone</th>
               <th>Role</th>
               <th>Services</th>
-              <th style={{width: '120px'}}></th>
+              <th className="col-actions"></th>
             </tr>
           </thead>
           <tbody>

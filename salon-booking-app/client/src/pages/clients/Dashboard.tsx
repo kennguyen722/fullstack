@@ -36,7 +36,13 @@ export default function Dashboard() {
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
   const [recentAppointments, setRecentAppointments] = useState<Appointment[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  function toYMDLocal(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  const [selectedDate, setSelectedDate] = useState<string>(() => toYMDLocal(new Date()));
   const [viewMode, setViewMode] = useState<'today' | 'upcoming' | 'selected'>('today');
   const [isLoading, setIsLoading] = useState(true);
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
@@ -74,7 +80,7 @@ export default function Dashboard() {
       setRecentAppointments(recentAppts);
       
       // Load selected date appointments if different from today
-      if (selectedDate !== new Date().toISOString().split('T')[0]) {
+      if (selectedDate !== toYMDLocal(new Date())) {
         loadAppointmentsForDate(selectedDate);
       } else {
         setSelectedDateAppointments(todaysAppts);

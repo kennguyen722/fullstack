@@ -31,7 +31,7 @@ export default function Appointments() {
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [calendarMode, setCalendarMode] = useState<'day' | 'week'>('day');
-  const [calendarDate, setCalendarDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [calendarDate, setCalendarDate] = useState<string>(() => toYMDLocal(new Date()));
   const [dragPreview, setDragPreview] = useState<null | { id: number; startQ: number; durQ: number; day?: string; empId?: number }>(null);
   const [showDetails, setShowDetails] = useState<Appointment | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -78,7 +78,7 @@ export default function Appointments() {
     { day: 6, startTime: '', endTime: '' },
     { day: 7, startTime: '', endTime: '' },
   ]);
-  const [myBulkStart, setMyBulkStart] = useState(() => new Date().toISOString().split('T')[0]);
+  const [myBulkStart, setMyBulkStart] = useState(() => toYMDLocal(new Date()));
   const [myBulkWeeks, setMyBulkWeeks] = useState(4);
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
   const [showFilters, setShowFilters] = useState(false);
@@ -166,7 +166,13 @@ export default function Appointments() {
 
   // Helpers for calendar
   function isSameDayISO(iso: string, ymd: string) {
-    return new Date(iso).toISOString().slice(0, 10) === ymd;
+    // Convert the ISO datetime to local yyyy-mm-dd so comparison uses local date
+    try {
+      const d = new Date(iso);
+      return toYMDLocal(d) === ymd;
+    } catch {
+      return false;
+    }
   }
 
   function minutesSince(startHour: number, date: Date) {
@@ -180,9 +186,11 @@ export default function Appointments() {
     return `${y}-${m}-${day}`;
   }
 
-  const CAL_START_H = 8; // 8am
-  const CAL_END_H = 20; // 8pm
+  const CAL_START_H = 7; // 7am
+  const CAL_END_H = 21; // 9pm
   const CAL_TOTAL_MIN = (CAL_END_H - CAL_START_H) * 60;
+  const CAL_SLOT_MIN = 60; // 1 hour slots
+  const NUM_SLOTS = Math.floor(CAL_TOTAL_MIN / CAL_SLOT_MIN); // number of hourly slots in the calendar (integer)
 
   const dayApptsByEmp = useMemo(() => {
     const map: Record<number, Appointment[]> = {};
@@ -262,16 +270,36 @@ export default function Appointments() {
     return `apt-svc-${h}`;
   }
 
+  // Ensure a style tag exists that positions an appointment by class name
+  function ensurePosStyle(id: number, topPercent: number, heightPercent: number) {
+    try {
+      const styleId = `apt-pos-style-${id}`;
+      const className = `apt-pos-${id}`;
+      let s = document.getElementById(styleId) as HTMLStyleElement | null;
+      const css = `.${className} { top: ${topPercent}%; height: ${heightPercent}%; }`;
+      if (!s) {
+        s = document.createElement('style');
+        s.id = styleId;
+        s.appendChild(document.createTextNode(css));
+        document.head.appendChild(s);
+      } else {
+        if (s.textContent !== css) s.textContent = css;
+      }
+    } catch (e) {
+      // silently ignore in non-browser environments
+    }
+  }
+
   function onStartDrag(e: React.MouseEvent, a: Appointment, day?: string, empId?: number) {
     // ignore drags when clicking buttons
     const target = e.target as HTMLElement;
     if (target.closest('button')) return;
     e.preventDefault();
     const start = new Date(a.start);
-    const startM = minutesSince(CAL_START_H, start);
-    const startQ = Math.max(0, Math.min(48, Math.round(startM/15)));
-    const durM = Math.max(15, (new Date(a.end).getTime() - start.getTime())/60000);
-    const durQ = Math.max(1, Math.round(durM/15));
+  const startM = minutesSince(CAL_START_H, start);
+  const startQ = Math.max(0, Math.min(NUM_SLOTS, Math.round(startM / CAL_SLOT_MIN)));
+    const durM = Math.max(CAL_SLOT_MIN, (new Date(a.end).getTime() - start.getTime())/60000);
+    const durQ = Math.max(1, Math.round(durM / CAL_SLOT_MIN));
   const originalEmpId = a.employee?.id;
   let current = { id: a.id, startQ, durQ, day, empId: empId ?? originalEmpId } as { id:number; startQ:number; durQ:number; day?:string; empId?:number };
     setDragPreview(current);
@@ -284,8 +312,8 @@ export default function Appointments() {
       if (!col) return;
       const rect = col.getBoundingClientRect();
       const y = ev.clientY - rect.top;
-      const mins = Math.max(0, Math.min(CAL_TOTAL_MIN, (y / rect.height) * CAL_TOTAL_MIN));
-      const newQ = Math.round(mins / 15);
+    const mins = Math.max(0, Math.min(CAL_TOTAL_MIN, (y / rect.height) * CAL_TOTAL_MIN));
+  const newQ = Math.max(0, Math.min(NUM_SLOTS, Math.round(mins / CAL_SLOT_MIN)));
       const newDay = col.getAttribute('data-day') || day || calendarDate;
       const newEmpIdStr = col.getAttribute('data-emp-id');
       let newEmpId = newEmpIdStr ? Number(newEmpIdStr) : (empId || originalEmpId);
@@ -299,7 +327,7 @@ export default function Appointments() {
       if (!current) { setDragPreview(null); return; }
       const dayYMD = current.day || day || calendarDate;
       const newQ = current.startQ;
-      const minutes = newQ * 15;
+  const minutes = newQ * CAL_SLOT_MIN;
       const dt = new Date(dayYMD + 'T00:00:00');
       dt.setHours(CAL_START_H, 0, 0, 0);
       dt.setMinutes(dt.getMinutes() + minutes);
@@ -555,7 +583,7 @@ export default function Appointments() {
 
   function openEditMyShift(s: {id:number; start:string; end:string}) {
     const d = new Date(s.start);
-    const date = d.toISOString().split('T')[0];
+  const date = toYMDLocal(d);
     const startTime = d.toTimeString().slice(0,5);
     const endTime = new Date(s.end).toTimeString().slice(0,5);
     setEditMyShift({ id: s.id, date, startTime, endTime });
@@ -588,7 +616,7 @@ export default function Appointments() {
 
   function openReschedule(appt: Appointment) {
     const d = new Date(appt.start);
-    const date = d.toISOString().split('T')[0];
+  const date = toYMDLocal(d);
     const time = d.toTimeString().slice(0,5);
     setRescheduleForm({
       serviceId: String(appt.service.id),
@@ -672,7 +700,7 @@ export default function Appointments() {
           <button
             className={`btn btn-sm ${showFilters ? 'btn-outline-secondary' : 'btn-primary'}`}
             onClick={() => setShowFilters(v => !v)}
-            aria-expanded={showFilters ? 'true' : 'false'}
+            aria-expanded={showFilters}
             aria-controls="appointments-filters"
           >
             {showFilters ? (<><i className="bi bi-chevron-up me-1"/>Hide</>) : (<><i className="bi bi-funnel me-1"/>Show Filters</>)}
@@ -813,11 +841,13 @@ export default function Appointments() {
                 <div className="apt-cal-body d-flex position-relative">
                   {/* Time labels */}
                   <div className="apt-time-col flex-shrink-0 border-top">
-                    {Array.from({length:(CAL_END_H-CAL_START_H)}).map((_,i)=>{
-                      const h = CAL_START_H + i;
-                      const label = new Date(0,0,0,h).toLocaleTimeString([], { hour:'numeric' });
+                    {Array.from({length: NUM_SLOTS}).map((_, idx) => {
+                      const minutesFromStart = idx * CAL_SLOT_MIN;
+                      const hour = CAL_START_H + Math.floor(minutesFromStart / 60);
+                      const minute = minutesFromStart % 60;
+                      const label = new Date(0, 0, 0, hour, minute).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                       return (
-                        <div key={h} className="apt-time-slot border-bottom small text-muted">{label}</div>
+                        <div key={idx} className="apt-time-slot border-bottom small text-muted">{label}</div>
                       );
                     })}
                   </div>
@@ -830,12 +860,29 @@ export default function Appointments() {
                       const now = new Date();
                       const mins = minutesSince(CAL_START_H, now);
                       if (mins >= 0 && mins <= CAL_TOTAL_MIN) {
-                        const q = Math.max(0, Math.min(48, Math.round(mins / 15)));
+                        // compute precise position as percent of column height
+                        const topPercent = (mins / CAL_TOTAL_MIN) * 100;
                         const label = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                        // Inject or update a single style tag for the now indicator
+                        try {
+                          const styleId = 'apt-now-style';
+                          let s = document.getElementById(styleId) as HTMLStyleElement | null;
+                          const css = `.apt-nowline { top: ${topPercent}%; } .apt-nowtime { top: ${topPercent}%; }`;
+                          if (!s) {
+                            s = document.createElement('style');
+                            s.id = styleId;
+                            s.appendChild(document.createTextNode(css));
+                            document.head.appendChild(s);
+                          } else {
+                            if (s.textContent !== css) s.textContent = css;
+                          }
+                        } catch (e) {
+                          // ignore in non-browser environments
+                        }
                         return (
                           <>
-                            <div className={`apt-nowline top-q-${q}`} />
-                            <div className={`apt-nowtime top-q-${q}`}>
+                            <div className={`apt-nowline`} />
+                            <div className={`apt-nowtime`}>
                               <span className="apt-nowpill">{label}</span>
                             </div>
                           </>
@@ -859,7 +906,7 @@ export default function Appointments() {
                           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                           const y = e.clientY - rect.top;
                           const mins = Math.max(0, Math.min(CAL_TOTAL_MIN, (y / rect.height) * CAL_TOTAL_MIN));
-                          const minutesRounded = Math.floor(mins / 15) * 15; // 15-min granularity
+                          const minutesRounded = Math.floor(mins / CAL_SLOT_MIN) * CAL_SLOT_MIN; // slot granularity
                           const dt = new Date(calendarDate + 'T00:00:00');
                           dt.setHours(CAL_START_H, 0, 0, 0);
                           dt.setMinutes(dt.getMinutes() + minutesRounded);
@@ -868,7 +915,7 @@ export default function Appointments() {
                           setShowCreateModal(true);
                         }} aria-label={`Column for ${emp.firstName} ${emp.lastName}`}>
                           {/* Hour grid lines */}
-                          {Array.from({length:(CAL_END_H-CAL_START_H)}).map((_,i)=> (
+                          {Array.from({length: NUM_SLOTS}).map((_, i) => (
                             <div key={i} className="apt-col-hour border-bottom" aria-hidden="true"></div>
                           ))}
                           {/* Events with overlap layout */}
@@ -876,32 +923,41 @@ export default function Appointments() {
                             const start = new Date(a.start);
                             const end = new Date(a.end);
                             const startM = minutesSince(CAL_START_H, start);
-                            const durM = Math.max(15, (end.getTime()-start.getTime())/60000);
-                            const startQ = Math.max(0, Math.min(48, Math.round(startM/15)));
-                            let durQ = Math.max(1, Math.round(durM/15));
-                            if (startQ + durQ > 48) durQ = 48 - startQ;
+                            const durM = Math.max(1, (end.getTime()-start.getTime())/60000);
+                            // compute quantized values for legacy classes (use NUM_SLOTS instead of hard-coded 48)
+                            const startQ = Math.max(0, Math.min(NUM_SLOTS, Math.floor(startM / CAL_SLOT_MIN)));
+                            let durQ = Math.max(1, Math.ceil(durM / CAL_SLOT_MIN));
+                            if (startQ + durQ > NUM_SLOTS) durQ = NUM_SLOTS - startQ;
                             const isBlocked = a.clientName?.toUpperCase() === 'BLOCKED';
                             const wl = widthLeftClasses(colIndex, colCount);
                             const svc = isBlocked ? '' : svcColorClass(a);
-                            const dragging = dragPreview && dragPreview.id === a.id; // preview any mode
+                            const dragging = dragPreview && dragPreview.id === a.id;
                             const topClass = dragging ? `top-q-${dragPreview!.startQ}` : `top-q-${startQ}`;
                             const hClass = `h-q-${durQ}`;
-                            // Compute display times; during drag, use preview position
-                            let dispStart = start;
-                            let dispEnd = end;
+                            // compute precise display start/end (respect drag preview if present)
+                            let displayStart = start;
+                            let displayEnd = end;
                             if (dragging) {
                               const dayYMD = dragPreview!.day || calendarDate;
                               const previewStart = new Date(dayYMD + 'T00:00:00');
                               previewStart.setHours(CAL_START_H, 0, 0, 0);
-                              previewStart.setMinutes(previewStart.getMinutes() + dragPreview!.startQ * 15);
+                              previewStart.setMinutes(previewStart.getMinutes() + dragPreview!.startQ * CAL_SLOT_MIN);
                               const previewEnd = new Date(previewStart);
-                              previewEnd.setMinutes(previewEnd.getMinutes() + durQ * 15);
-                              dispStart = previewStart;
-                              dispEnd = previewEnd;
+                              previewEnd.setMinutes(previewEnd.getMinutes() + durQ * CAL_SLOT_MIN);
+                              displayStart = previewStart;
+                              displayEnd = previewEnd;
                             }
+                            // precise placement in percent of calendar column
+                            const startMExact = minutesSince(CAL_START_H, displayStart);
+                            const durMExact = Math.max(1, (displayEnd.getTime() - displayStart.getTime()) / 60000);
+                            const topPercent = (startMExact / CAL_TOTAL_MIN) * 100;
+                            const heightPercent = (durMExact / CAL_TOTAL_MIN) * 100;
                             const canEdit = user?.role === 'ADMIN' || (user?.role === 'EMPLOYEE' && a.employee?.id === Number(createForm.employeeId || 0));
+                            // ensure a CSS rule exists for precise placement and add class
+                            ensurePosStyle(a.id, topPercent, heightPercent);
                             return (
-                              <div key={a.id} className={`apt-event has-icons ${isBlocked ? 'apt-event-blocked' : 'apt-event-booked'} ${svc} ${topClass} ${hClass} ${wl} ${dragging ? 'drag-preview apt-dragging' : ''} ${!canEdit ? 'apt-event-readonly' : ''}`}
+                              <div key={a.id}
+                                className={`apt-event has-icons ${isBlocked ? 'apt-event-blocked' : 'apt-event-booked'} ${svc} ${topClass} ${hClass} ${wl} ${dragging ? 'drag-preview apt-dragging' : ''} ${!canEdit ? 'apt-event-readonly' : ''} apt-pos-${a.id}`}
                                 title={!canEdit ? 'Read-only: you can only edit your own appointments' : undefined}
                                 onMouseDown={canEdit ? (ev)=> onStartDrag(ev, a) : undefined}>
                                 {dragging && (
@@ -919,7 +975,7 @@ export default function Appointments() {
                                   {canEdit && <button className="btn btn-xs btn-ico" onClick={(e)=>{ e.stopPropagation(); openReschedule(a); }} aria-label="Update appointment"><i className="bi bi-pencil"/></button>}
                                 </div>
                                 <div className="apt-main small">
-                                  <span className="apt-time fw-medium">{dispStart.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} - {dispEnd.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span>
+                                  <span className="apt-time fw-medium">{displayStart.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} - {displayEnd.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span>
                                   {!isBlocked && <span className="apt-sep"> · </span>}
                                   <span className="apt-client">{isBlocked ? 'Blocked time' : a.clientName}</span>
                                 </div>
@@ -950,11 +1006,13 @@ export default function Appointments() {
                 </div>
                 <div className="apt-cal-body d-flex position-relative">
                   <div className="apt-time-col flex-shrink-0 border-top">
-                    {Array.from({length:(CAL_END_H-CAL_START_H)}).map((_,i)=>{
-                      const h = CAL_START_H + i;
-                      const label = new Date(0,0,0,h).toLocaleTimeString([], { hour:'numeric' });
+                    {Array.from({length: NUM_SLOTS}).map((_, idx) => {
+                      const minutesFromStart = idx * CAL_SLOT_MIN;
+                      const hour = CAL_START_H + Math.floor(minutesFromStart / 60);
+                      const minute = minutesFromStart % 60;
+                      const label = new Date(0, 0, 0, hour, minute).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                       return (
-                        <div key={h} className="apt-time-slot border-bottom small text-muted">{label}</div>
+                        <div key={idx} className="apt-time-slot border-bottom small text-muted">{label}</div>
                       );
                     })}
                   </div>
@@ -991,47 +1049,52 @@ export default function Appointments() {
                             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                             const y = e.clientY - rect.top;
                             const mins = Math.max(0, Math.min(CAL_TOTAL_MIN, (y / rect.height) * CAL_TOTAL_MIN));
-                            const minutesRounded = Math.floor(mins / 15) * 15;
+                            const minutesRounded = Math.floor(mins / CAL_SLOT_MIN) * CAL_SLOT_MIN;
                             const dt = new Date(dayYMD + 'T00:00:00');
                             dt.setHours(CAL_START_H, 0, 0, 0);
                             dt.setMinutes(dt.getMinutes() + minutesRounded);
                             setCreateForm((f)=>({ ...f, employeeId: String(empId), date: dayYMD, time: dt.toTimeString().slice(0,5) }));
                             setShowCreateModal(true);
                           }} aria-label={`Column for ${new Date(dayYMD).toDateString()}`}>
-                            {Array.from({length:(CAL_END_H-CAL_START_H)}).map((_,i)=> (
+                            {Array.from({length: NUM_SLOTS}).map((_, i) => (
                               <div key={i} className="apt-col-hour border-bottom" aria-hidden="true"></div>
                             ))}
                             {laid.map(({appt: a, colIndex, colCount}) => {
                               const start = new Date(a.start);
-                              const end = new Date(a.end);
-                              const startM = minutesSince(CAL_START_H, start);
-                              const durM = Math.max(15, (end.getTime()-start.getTime())/60000);
-                              const startQ = Math.max(0, Math.min(48, Math.round(startM/15)));
-                              let durQ = Math.max(1, Math.round(durM/15));
-                              if (startQ + durQ > 48) durQ = 48 - startQ;
-                              const isBlocked = a.clientName?.toUpperCase() === 'BLOCKED';
-                              const wl = widthLeftClasses(colIndex, colCount);
-                              const svc = isBlocked ? '' : svcColorClass(a);
-                              const dragging = dragPreview && dragPreview.id === a.id;
-                              const topClass = dragging ? `top-q-${dragPreview!.startQ}` : `top-q-${startQ}`;
-                              const hClass = `h-q-${durQ}`;
-                              let dispStart = start;
-                              let dispEnd = end;
-                              if (dragging) {
-                                const dayForPreview = dragPreview!.day || dayYMD;
-                                const previewStart = new Date(dayForPreview + 'T00:00:00');
-                                previewStart.setHours(CAL_START_H, 0, 0, 0);
-                                previewStart.setMinutes(previewStart.getMinutes() + dragPreview!.startQ * 15);
-                                const previewEnd = new Date(previewStart);
-                                previewEnd.setMinutes(previewEnd.getMinutes() + durQ * 15);
-                                dispStart = previewStart;
-                                dispEnd = previewEnd;
-                              }
-                              const canEdit = user?.role === 'ADMIN' || (user?.role === 'EMPLOYEE' && a.employee?.id === Number(createForm.employeeId || 0));
-                              return (
-                                <div key={a.id} className={`apt-event has-icons ${isBlocked ? 'apt-event-blocked' : 'apt-event-booked'} ${svc} ${topClass} ${hClass} ${wl} ${dragging ? 'drag-preview apt-dragging' : ''} ${!canEdit ? 'apt-event-readonly' : ''}`}
-                                  title={!canEdit ? 'Read-only: you can only edit your own appointments' : undefined}
-                                  onMouseDown={canEdit ? (ev)=> onStartDrag(ev, a, dayYMD, empId!) : undefined}>
+                                const end = new Date(a.end);
+                                const startM = minutesSince(CAL_START_H, start);
+                                const durM = Math.max(1, (end.getTime()-start.getTime())/60000);
+                                const startQ = Math.max(0, Math.min(NUM_SLOTS, Math.floor(startM / CAL_SLOT_MIN)));
+                                let durQ = Math.max(1, Math.ceil(durM / CAL_SLOT_MIN));
+                                if (startQ + durQ > NUM_SLOTS) durQ = NUM_SLOTS - startQ;
+                                const isBlocked = a.clientName?.toUpperCase() === 'BLOCKED';
+                                const wl = widthLeftClasses(colIndex, colCount);
+                                const svc = isBlocked ? '' : svcColorClass(a);
+                                const dragging = dragPreview && dragPreview.id === a.id;
+                                const topClass = dragging ? `top-q-${dragPreview!.startQ}` : `top-q-${startQ}`;
+                                const hClass = `h-q-${durQ}`;
+                                let displayStart = start;
+                                let displayEnd = end;
+                                if (dragging) {
+                                  const dayForPreview = dragPreview!.day || dayYMD;
+                                  const previewStart = new Date(dayForPreview + 'T00:00:00');
+                                  previewStart.setHours(CAL_START_H, 0, 0, 0);
+                                  previewStart.setMinutes(previewStart.getMinutes() + dragPreview!.startQ * CAL_SLOT_MIN);
+                                  const previewEnd = new Date(previewStart);
+                                  previewEnd.setMinutes(previewEnd.getMinutes() + durQ * CAL_SLOT_MIN);
+                                  displayStart = previewStart;
+                                  displayEnd = previewEnd;
+                                }
+                                const canEdit = user?.role === 'ADMIN' || (user?.role === 'EMPLOYEE' && a.employee?.id === Number(createForm.employeeId || 0));
+                                const startMExact = minutesSince(CAL_START_H, displayStart);
+                                const durMExact = Math.max(1, (displayEnd.getTime() - displayStart.getTime()) / 60000);
+                                const topPercent = (startMExact / CAL_TOTAL_MIN) * 100;
+                                const heightPercent = (durMExact / CAL_TOTAL_MIN) * 100;
+                                ensurePosStyle(a.id, topPercent, heightPercent);
+                                return (
+                                  <div key={a.id} className={`apt-event has-icons ${isBlocked ? 'apt-event-blocked' : 'apt-event-booked'} ${svc} ${topClass} ${hClass} ${wl} ${dragging ? 'drag-preview apt-dragging' : ''} ${!canEdit ? 'apt-event-readonly' : ''} apt-pos-${a.id}`}
+                                    title={!canEdit ? 'Read-only: you can only edit your own appointments' : undefined}
+                                    onMouseDown={canEdit ? (ev)=> onStartDrag(ev, a, dayYMD, empId!) : undefined}>
                                   {dragging && (
                                     <div className="apt-destbadge">
                                       {(() => {
@@ -1047,7 +1110,7 @@ export default function Appointments() {
                                     {canEdit && <button className="btn btn-xs btn-ico" onClick={(e)=>{ e.stopPropagation(); openReschedule(a); }} aria-label="Update appointment"><i className="bi bi-pencil"/></button>}
                                   </div>
                                   <div className="apt-main small">
-                                    <span className="apt-time fw-medium">{dispStart.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} - {dispEnd.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span>
+                                    <span className="apt-time fw-medium">{displayStart.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} - {displayEnd.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</span>
                                     {!isBlocked && <span className="apt-sep"> · </span>}
                                     <span className="apt-client">{isBlocked ? 'Blocked time' : a.clientName}</span>
                                   </div>
@@ -1408,7 +1471,7 @@ export default function Appointments() {
                         type="date"
                         className="form-control"
                         value={createForm.date}
-                        min={new Date().toISOString().split('T')[0]}
+                        min={toYMDLocal(new Date())}
                         onChange={(e) => setCreateForm({...createForm, date: e.target.value})}
                         required
                         aria-label="Date"

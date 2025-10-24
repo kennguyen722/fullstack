@@ -174,32 +174,7 @@ export default function Settings() {
           {/* Salon Information Tab */}
           {activeTab === 'salon' && (
             <form onSubmit={handleSalonSettingsSubmit}>
-              <h5 className="mb-3">Application Settings</h5>
-              
-              <div className="row mb-4">
-                <div className="col-md-12">
-                  <label className="form-label">
-                    <i className="bi bi-tag me-2"></i>
-                    Application Title (managed by Config)
-                  </label>
-                  <input 
-                    type="text"
-                    className="form-control"
-                    value={salonSettings.appTitle}
-                    placeholder="Application title managed by ConfigContext"
-                    disabled
-                  />
-                  <div className="form-text">
-                    The application title is controlled by the centralized configuration and cannot be edited from this form.
-                  </div>
-                  <div className="mt-2 p-2 bg-light rounded border">
-                    <small className="text-muted">
-                      <i className="bi bi-eye me-1"></i>
-                      Current: <strong>{salonSettings.appTitle}</strong>
-                    </small>
-                  </div>
-                </div>
-              </div>
+              {/* Application title is managed centrally; removed editable block for Admin/Employee views. */}
 
               <h5 className="mb-3">Business Information</h5>
               

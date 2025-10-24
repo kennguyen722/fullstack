@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Theme = 'light' | 'dark' | 'light-purple' | 'purple-dark';
+export type Theme = 'dark' | 'purple-dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -25,25 +25,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Check localStorage for saved theme
     const savedTheme = localStorage.getItem('salon-app-theme');
     const fallback: Theme = 'dark';
-    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'light-purple' || savedTheme === 'purple-dark') {
+    if (savedTheme === 'dark' || savedTheme === 'purple-dark') {
       return savedTheme as Theme;
     }
     return fallback;
   });
 
   const availableThemes = [
-    {
-      value: 'light' as Theme,
-      label: 'Light',
-      icon: 'bi-sun-fill',
-      description: 'Clean and bright interface'
-    },
-    {
-      value: 'light-purple' as Theme,
-      label: 'Light • Purple',
-      icon: 'bi-palette-fill',
-      description: 'Professional light theme with purple accents'
-    },
     {
       value: 'purple-dark' as Theme,
       label: 'Purple • Glow',

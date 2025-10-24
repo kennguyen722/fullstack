@@ -57,7 +57,7 @@ export default function MyAvailability() {
 
   function openEditMyShift(s: {id:number; start:string; end:string}) {
     const d = new Date(s.start);
-    const date = d.toISOString().split('T')[0];
+    const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const startTime = d.toTimeString().slice(0,5);
     const endTime = new Date(s.end).toTimeString().slice(0,5);
     setEditMyShift({ id: s.id, date, startTime, endTime });
